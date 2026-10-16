@@ -1,0 +1,41 @@
+# Dependencias
+node_modules/
+*/node_modules/
+
+# Archivos de entorno y credenciales (¡NO SUBIR A GITHUB!)
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+!*/.env.example
+
+# Compilaciones y builds
+dist/
+*/dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Cobertura de pruebas
+coverage/
+*/coverage/
+
+# IDEs y Editores de código
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
