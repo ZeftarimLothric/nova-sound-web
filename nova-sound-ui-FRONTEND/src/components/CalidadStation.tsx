@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { EstadosCalidadEnum } from '../types/database';
 import { usePlanta } from '../context/PlantaContext';
-import Icon from './common/Icon';
+import Icon from './common/LogoBocina';
 
 const DEFECTOS_CATALOGO = [
   { id: 1, categoria: 'Apariencia', descripcion: 'Rayón en carcasa' },
@@ -107,7 +107,7 @@ export const CalidadStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="fact_check" color="#10b981" size="20px" />
+            <Icon name="fact_check" color="#2f9e44" size="20px" />
             Estación de Inspección & Control de Calidad · Línea {sesion.linea.nombre_linea}
           </h2>
           <span className="badge badge-ok">CHECKLIST PROTOCOLO ISO-9001</span>
@@ -134,8 +134,8 @@ export const CalidadStation: React.FC = () => {
           {unidadesPendientes.length > 0 && (
             <div
               style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #28374d',
+                backgroundColor: '#f5f7f9',
+                border: '1px solid #cfd6dd',
                 padding: '10px 14px',
                 borderRadius: '2px',
                 marginBottom: '16px',
@@ -145,7 +145,7 @@ export const CalidadStation: React.FC = () => {
                 flexWrap: 'wrap',
               }}
             >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#2b6cb0', fontFamily: 'var(--font-mono)' }}>
                 EN COLA DE INSPECCIÓN ({unidadesPendientes.length}):
               </span>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -157,8 +157,8 @@ export const CalidadStation: React.FC = () => {
                     style={{
                       fontSize: '11px',
                       padding: '3px 8px',
-                      backgroundColor: numeroSerie === u.numero_serie ? '#0284c7' : '#1c283a',
-                      borderColor: numeroSerie === u.numero_serie ? '#38bdf8' : '#2b3d56',
+                      backgroundColor: numeroSerie === u.numero_serie ? '#2b6cb0' : '#e4e8ec',
+                      borderColor: numeroSerie === u.numero_serie ? '#2b6cb0' : '#b8c2cc',
                       color: '#ffffff',
                     }}
                     onClick={() => setNumeroSerie(u.numero_serie)}
@@ -173,7 +173,7 @@ export const CalidadStation: React.FC = () => {
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Campo Serie */}
             <div style={{ maxWidth: '500px' }}>
-              <label htmlFor="input-serial" style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#f1f5f9', marginBottom: '6px', textTransform: 'uppercase' }}>
+              <label htmlFor="input-serial" style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#1f2933', marginBottom: '6px', textTransform: 'uppercase' }}>
                 Número de Serie a Dictaminar:
               </label>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -191,8 +191,8 @@ export const CalidadStation: React.FC = () => {
 
             {/* Banco de Pruebas Físicas */}
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="electrical_services" size="16px" color="#38bdf8" />
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#2b6cb0', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Icon name="electrical_services" size="16px" color="#2b6cb0" />
                 1. Pruebas Funcionales y Eléctricas (prueba_funcional)
               </div>
               <div
@@ -207,8 +207,8 @@ export const CalidadStation: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    backgroundColor: validaEncendido ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                    border: `1px solid ${validaEncendido ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                    backgroundColor: validaEncendido ? 'rgba(47, 158, 68, 0.08)' : 'rgba(214, 69, 69, 0.08)',
+                    border: `1px solid ${validaEncendido ? 'rgba(47, 158, 68, 0.3)' : 'rgba(214, 69, 69, 0.3)'}`,
                     padding: '10px 14px',
                     borderRadius: '2px',
                     cursor: 'pointer',
@@ -219,8 +219,8 @@ export const CalidadStation: React.FC = () => {
                     checked={validaEncendido}
                     onChange={(e) => handleCheckPrueba(setValidaEncendido, e.target.checked)}
                   />
-                  <Icon name="power_settings_new" size="18px" color={validaEncendido ? '#10b981' : '#ef4444'} />
-                  <span style={{ color: validaEncendido ? '#f1f5f9' : '#f87171', fontWeight: 600 }}>
+                  <Icon name="power_settings_new" size="18px" color={validaEncendido ? '#2f9e44' : '#d64545'} />
+                  <span style={{ color: validaEncendido ? '#1f2933' : '#d64545', fontWeight: 600 }}>
                     Encendido y Energía
                   </span>
                 </label>
@@ -230,8 +230,8 @@ export const CalidadStation: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    backgroundColor: validaAudio ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                    border: `1px solid ${validaAudio ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                    backgroundColor: validaAudio ? 'rgba(47, 158, 68, 0.08)' : 'rgba(214, 69, 69, 0.08)',
+                    border: `1px solid ${validaAudio ? 'rgba(47, 158, 68, 0.3)' : 'rgba(214, 69, 69, 0.3)'}`,
                     padding: '10px 14px',
                     borderRadius: '2px',
                     cursor: 'pointer',
@@ -242,8 +242,8 @@ export const CalidadStation: React.FC = () => {
                     checked={validaAudio}
                     onChange={(e) => handleCheckPrueba(setValidaAudio, e.target.checked)}
                   />
-                  <Icon name="volume_up" size="18px" color={validaAudio ? '#10b981' : '#ef4444'} />
-                  <span style={{ color: validaAudio ? '#f1f5f9' : '#f87171', fontWeight: 600 }}>
+                  <Icon name="volume_up" size="18px" color={validaAudio ? '#2f9e44' : '#d64545'} />
+                  <span style={{ color: validaAudio ? '#1f2933' : '#d64545', fontWeight: 600 }}>
                     Respuesta Acústica / Driver
                   </span>
                 </label>
@@ -253,8 +253,8 @@ export const CalidadStation: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    backgroundColor: validaCarga ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                    border: `1px solid ${validaCarga ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                    backgroundColor: validaCarga ? 'rgba(47, 158, 68, 0.08)' : 'rgba(214, 69, 69, 0.08)',
+                    border: `1px solid ${validaCarga ? 'rgba(47, 158, 68, 0.3)' : 'rgba(214, 69, 69, 0.3)'}`,
                     padding: '10px 14px',
                     borderRadius: '2px',
                     cursor: 'pointer',
@@ -265,8 +265,8 @@ export const CalidadStation: React.FC = () => {
                     checked={validaCarga}
                     onChange={(e) => handleCheckPrueba(setValidaCarga, e.target.checked)}
                   />
-                  <Icon name="battery_charging_full" size="18px" color={validaCarga ? '#10b981' : '#ef4444'} />
-                  <span style={{ color: validaCarga ? '#f1f5f9' : '#f87171', fontWeight: 600 }}>
+                  <Icon name="battery_charging_full" size="18px" color={validaCarga ? '#2f9e44' : '#d64545'} />
+                  <span style={{ color: validaCarga ? '#1f2933' : '#d64545', fontWeight: 600 }}>
                     Carga Batería (USB-C)
                   </span>
                 </label>
@@ -276,8 +276,8 @@ export const CalidadStation: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    backgroundColor: validaBluetooth ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                    border: `1px solid ${validaBluetooth ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                    backgroundColor: validaBluetooth ? 'rgba(47, 158, 68, 0.08)' : 'rgba(214, 69, 69, 0.08)',
+                    border: `1px solid ${validaBluetooth ? 'rgba(47, 158, 68, 0.3)' : 'rgba(214, 69, 69, 0.3)'}`,
                     padding: '10px 14px',
                     borderRadius: '2px',
                     cursor: 'pointer',
@@ -288,8 +288,8 @@ export const CalidadStation: React.FC = () => {
                     checked={validaBluetooth}
                     onChange={(e) => handleCheckPrueba(setValidaBluetooth, e.target.checked)}
                   />
-                  <Icon name="bluetooth" size="18px" color={validaBluetooth ? '#10b981' : '#ef4444'} />
-                  <span style={{ color: validaBluetooth ? '#f1f5f9' : '#f87171', fontWeight: 600 }}>
+                  <Icon name="bluetooth" size="18px" color={validaBluetooth ? '#2f9e44' : '#d64545'} />
+                  <span style={{ color: validaBluetooth ? '#1f2933' : '#d64545', fontWeight: 600 }}>
                     Enlace Bluetooth 5.3
                   </span>
                 </label>
@@ -298,8 +298,8 @@ export const CalidadStation: React.FC = () => {
 
             {/* Dictamen Formal de Calidad */}
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="gavel" size="16px" color="#38bdf8" />
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#2b6cb0', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Icon name="gavel" size="16px" color="#2b6cb0" />
                 2. Dictamen Operativo (catalogo_estados_calidad)
               </div>
               <div
@@ -314,9 +314,9 @@ export const CalidadStation: React.FC = () => {
                   onClick={() => setIdEstadoCalidad(EstadosCalidadEnum.APROBADA)}
                   style={{
                     padding: '12px',
-                    border: `2px solid ${idEstadoCalidad === EstadosCalidadEnum.APROBADA ? '#10b981' : '#263449'}`,
-                    backgroundColor: idEstadoCalidad === EstadosCalidadEnum.APROBADA ? 'rgba(16, 185, 129, 0.15)' : '#141d2b',
-                    color: idEstadoCalidad === EstadosCalidadEnum.APROBADA ? '#ffffff' : '#94a3b8',
+                    border: `2px solid ${idEstadoCalidad === EstadosCalidadEnum.APROBADA ? '#2f9e44' : '#cfd6dd'}`,
+                    backgroundColor: idEstadoCalidad === EstadosCalidadEnum.APROBADA ? 'rgba(47, 158, 68, 0.15)' : '#f5f7f9',
+                    color: idEstadoCalidad === EstadosCalidadEnum.APROBADA ? '#ffffff' : '#667085',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-start',
@@ -326,11 +326,11 @@ export const CalidadStation: React.FC = () => {
                     textAlign: 'left',
                   }}
                 >
-                  <strong style={{ color: '#10b981', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Icon name="check_circle" size="16px" color="#10b981" />
+                  <strong style={{ color: '#2f9e44', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Icon name="check_circle" size="16px" color="#2f9e44" />
                     1. APROBADA
                   </strong>
-                  <span style={{ fontSize: '11px', color: '#8493a8' }}>Apta para empaque en caja</span>
+                  <span style={{ fontSize: '11px', color: '#667085' }}>Apta para empaque en caja</span>
                 </button>
 
                 <button
@@ -338,9 +338,9 @@ export const CalidadStation: React.FC = () => {
                   onClick={() => setIdEstadoCalidad(EstadosCalidadEnum.EN_RETRABAJO)}
                   style={{
                     padding: '12px',
-                    border: `2px solid ${idEstadoCalidad === EstadosCalidadEnum.EN_RETRABAJO ? '#f59e0b' : '#263449'}`,
-                    backgroundColor: idEstadoCalidad === EstadosCalidadEnum.EN_RETRABAJO ? 'rgba(245, 158, 11, 0.15)' : '#141d2b',
-                    color: idEstadoCalidad === EstadosCalidadEnum.EN_RETRABAJO ? '#ffffff' : '#94a3b8',
+                    border: `2px solid ${idEstadoCalidad === EstadosCalidadEnum.EN_RETRABAJO ? '#b7791f' : '#cfd6dd'}`,
+                    backgroundColor: idEstadoCalidad === EstadosCalidadEnum.EN_RETRABAJO ? 'rgba(217, 142, 4, 0.15)' : '#f5f7f9',
+                    color: idEstadoCalidad === EstadosCalidadEnum.EN_RETRABAJO ? '#ffffff' : '#667085',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-start',
@@ -350,11 +350,11 @@ export const CalidadStation: React.FC = () => {
                     textAlign: 'left',
                   }}
                 >
-                  <strong style={{ color: '#f59e0b', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Icon name="build" size="16px" color="#f59e0b" />
+                  <strong style={{ color: '#b7791f', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Icon name="build" size="16px" color="#b7791f" />
                     2. EN RETRABAJO
                   </strong>
-                  <span style={{ fontSize: '11px', color: '#8493a8' }}>Corrección técnica en línea</span>
+                  <span style={{ fontSize: '11px', color: '#667085' }}>Corrección técnica en línea</span>
                 </button>
 
                 <button
@@ -362,9 +362,9 @@ export const CalidadStation: React.FC = () => {
                   onClick={() => setIdEstadoCalidad(EstadosCalidadEnum.EN_RETENCION)}
                   style={{
                     padding: '12px',
-                    border: `2px solid ${idEstadoCalidad === EstadosCalidadEnum.EN_RETENCION ? '#f59e0b' : '#263449'}`,
-                    backgroundColor: idEstadoCalidad === EstadosCalidadEnum.EN_RETENCION ? 'rgba(245, 158, 11, 0.15)' : '#141d2b',
-                    color: idEstadoCalidad === EstadosCalidadEnum.EN_RETENCION ? '#ffffff' : '#94a3b8',
+                    border: `2px solid ${idEstadoCalidad === EstadosCalidadEnum.EN_RETENCION ? '#b7791f' : '#cfd6dd'}`,
+                    backgroundColor: idEstadoCalidad === EstadosCalidadEnum.EN_RETENCION ? 'rgba(217, 142, 4, 0.15)' : '#f5f7f9',
+                    color: idEstadoCalidad === EstadosCalidadEnum.EN_RETENCION ? '#ffffff' : '#667085',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-start',
@@ -374,11 +374,11 @@ export const CalidadStation: React.FC = () => {
                     textAlign: 'left',
                   }}
                 >
-                  <strong style={{ color: '#f59e0b', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Icon name="pause_circle" size="16px" color="#f59e0b" />
+                  <strong style={{ color: '#b7791f', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Icon name="pause_circle" size="16px" color="#b7791f" />
                     3. EN RETENCIÓN
                   </strong>
-                  <span style={{ fontSize: '11px', color: '#8493a8' }}>Auditoría o cuarentena</span>
+                  <span style={{ fontSize: '11px', color: '#667085' }}>Auditoría o cuarentena</span>
                 </button>
 
                 <button
@@ -386,9 +386,9 @@ export const CalidadStation: React.FC = () => {
                   onClick={() => setIdEstadoCalidad(EstadosCalidadEnum.SCRAP)}
                   style={{
                     padding: '12px',
-                    border: `2px solid ${idEstadoCalidad === EstadosCalidadEnum.SCRAP ? '#ef4444' : '#263449'}`,
-                    backgroundColor: idEstadoCalidad === EstadosCalidadEnum.SCRAP ? 'rgba(239, 68, 68, 0.15)' : '#141d2b',
-                    color: idEstadoCalidad === EstadosCalidadEnum.SCRAP ? '#ffffff' : '#94a3b8',
+                    border: `2px solid ${idEstadoCalidad === EstadosCalidadEnum.SCRAP ? '#d64545' : '#cfd6dd'}`,
+                    backgroundColor: idEstadoCalidad === EstadosCalidadEnum.SCRAP ? 'rgba(214, 69, 69, 0.15)' : '#f5f7f9',
+                    color: idEstadoCalidad === EstadosCalidadEnum.SCRAP ? '#ffffff' : '#667085',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-start',
@@ -398,11 +398,11 @@ export const CalidadStation: React.FC = () => {
                     textAlign: 'left',
                   }}
                 >
-                  <strong style={{ color: '#ef4444', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Icon name="delete_forever" size="16px" color="#ef4444" />
+                  <strong style={{ color: '#d64545', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Icon name="delete_forever" size="16px" color="#d64545" />
                     4. SCRAP (DESECHO)
                   </strong>
-                  <span style={{ fontSize: '11px', color: '#8493a8' }}>Falla destructiva / descarte</span>
+                  <span style={{ fontSize: '11px', color: '#667085' }}>Falla destructiva / descarte</span>
                 </button>
               </div>
             </div>
@@ -411,8 +411,8 @@ export const CalidadStation: React.FC = () => {
             {idEstadoCalidad !== EstadosCalidadEnum.APROBADA && (
               <div
                 style={{
-                  backgroundColor: '#1b1419',
-                  border: '1px solid #4a1f28',
+                  backgroundColor: '#fdf3f3',
+                  border: '1px solid #fbeaea',
                   padding: '14px',
                   borderRadius: '2px',
                   display: 'flex',
@@ -421,7 +421,7 @@ export const CalidadStation: React.FC = () => {
                 }}
               >
                 <div>
-                  <label htmlFor="select-defecto" style={{ display: 'block', color: '#fca5a5', fontWeight: 700, marginBottom: '6px' }}>
+                  <label htmlFor="select-defecto" style={{ display: 'block', color: '#9b2c2c', fontWeight: 700, marginBottom: '6px' }}>
                     Clasificación de Falla (catalogo_defectos):
                   </label>
                   <select
@@ -439,7 +439,7 @@ export const CalidadStation: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="comentarios" style={{ display: 'block', color: '#fca5a5', fontWeight: 700, marginBottom: '6px' }}>
+                  <label htmlFor="comentarios" style={{ display: 'block', color: '#9b2c2c', fontWeight: 700, marginBottom: '6px' }}>
                     Observaciones técnicas de inspección:
                   </label>
                   <input
@@ -489,7 +489,7 @@ export const CalidadStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="history" size="18px" color="#38bdf8" />
+            <Icon name="history" size="18px" color="#2b6cb0" />
             Trazabilidad de Calidad (historial_unidades)
           </h2>
           <span className="badge badge-neutral">{historialUnidades.length} Registros</span>
@@ -514,15 +514,15 @@ export const CalidadStation: React.FC = () => {
 
                   return (
                     <tr key={reg.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
+                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#2b6cb0' }}>
                         {reg.numero_serie}
                       </td>
                       <td>
                         <span className={`badge ${badge}`}>{reg.estado_nuevo}</span>
                       </td>
                       <td>{reg.motivo}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{reg.fecha_hora}</td>
-                      <td style={{ fontSize: '11px', color: '#cbd5e1' }}>{reg.usuario_nombre}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>{reg.fecha_hora}</td>
+                      <td style={{ fontSize: '11px', color: '#475467' }}>{reg.usuario_nombre}</td>
                     </tr>
                   );
                 })}

@@ -1,6 +1,6 @@
 import { usePlanta } from '../../context/PlantaContext';
 import { EstadosCalidadEnum } from '../../types/database';
-import Icon from '../../components/common/Icon';
+import Icon from '../../components/common/LogoBocina';
 
 export default function Inicio() {
   const { unidades, cajas, embarques, bitacora, sesion } = usePlanta();
@@ -21,10 +21,10 @@ export default function Inicio() {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="sensors" size={18} color="#10b981" />
+            <Icon name="sensors" size={18} color="#2f9e44" />
             Telemetría y Rendimiento de Planta (SSOT)
           </h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>
+          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#2b6cb0' }}>
             LÍNEA {sesion.linea.nombre_linea} · TURNO {sesion.turno.nombre_turno.toUpperCase()}
           </span>
         </div>
@@ -32,17 +32,17 @@ export default function Inicio() {
           <div className="kpi-grid">
             <div className="kpi-card">
               <span className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="precision_manufacturing" size={14} color="#38bdf8" /> Total Ensamblado
+                <Icon name="precision_manufacturing" size={14} color="#2b6cb0" /> Total Ensamblado
               </span>
-              <div className="kpi-value">{totalEnsamblado} <span style={{ fontSize: '13px', color: '#64748b' }}>PZAS</span></div>
+              <div className="kpi-value">{totalEnsamblado} <span style={{ fontSize: '13px', color: '#7b8794' }}>PZAS</span></div>
               <span className="kpi-subtext">Piezas serializadas en piso</span>
             </div>
 
-            <div className="kpi-card" style={{ borderColor: 'rgba(16, 185, 129, 0.4)' }}>
-              <span className="kpi-label" style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="fact_check" size={14} color="#10b981" /> First-Pass Yield (Calidad)
+            <div className="kpi-card" style={{ borderColor: 'rgba(47, 158, 68, 0.4)' }}>
+              <span className="kpi-label" style={{ color: '#2f9e44', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Icon name="fact_check" size={14} color="#2f9e44" /> First-Pass Yield (Calidad)
               </span>
-              <div className="kpi-value" style={{ color: '#10b981' }}>{tasaAprobacion}%</div>
+              <div className="kpi-value" style={{ color: '#2f9e44' }}>{tasaAprobacion}%</div>
               <span className="kpi-subtext">
                 {totalAprobadas} aprobadas · {totalScrap} scrap · {totalRetrabajo} retrabajo
               </span>
@@ -50,17 +50,17 @@ export default function Inicio() {
 
             <div className="kpi-card">
               <span className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="inventory_2" size={14} color="#38bdf8" /> Cajas Selladas
+                <Icon name="inventory_2" size={14} color="#2b6cb0" /> Cajas Selladas
               </span>
-              <div className="kpi-value" style={{ color: '#38bdf8' }}>{cajasSelladas} <span style={{ fontSize: '13px', color: '#64748b' }}>CAJAS</span></div>
+              <div className="kpi-value" style={{ color: '#2b6cb0' }}>{cajasSelladas} <span style={{ fontSize: '13px', color: '#7b8794' }}>CAJAS</span></div>
               <span className="kpi-subtext">Listas para asignación de andén</span>
             </div>
 
             <div className="kpi-card">
               <span className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="local_shipping" size={14} color="#f59e0b" /> Embarques en Curso
+                <Icon name="local_shipping" size={14} color="#b7791f" /> Embarques en Curso
               </span>
-              <div className="kpi-value" style={{ color: '#f59e0b' }}>{embarquesActivos} <span style={{ fontSize: '13px', color: '#64748b' }}>ÓRDENES</span></div>
+              <div className="kpi-value" style={{ color: '#b7791f' }}>{embarquesActivos} <span style={{ fontSize: '13px', color: '#7b8794' }}>ÓRDENES</span></div>
               <span className="kpi-subtext">Control logístico y remisión</span>
             </div>
           </div>
@@ -88,19 +88,19 @@ export default function Inicio() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>L1</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#2b6cb0' }}>L1</td>
                     <td><strong>NS-PRO</strong> (Grafito Mate)</td>
                     <td style={{ fontFamily: 'var(--font-mono)' }}>6 pzas / caja</td>
                     <td><span className="badge badge-ok">Activa</span></td>
                   </tr>
                   <tr>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>L2</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#2b6cb0' }}>L2</td>
                     <td><strong>NS-MINI</strong> (Blanco Ártico)</td>
                     <td style={{ fontFamily: 'var(--font-mono)' }}>12 pzas / caja</td>
                     <td><span className="badge badge-ok">Activa</span></td>
                   </tr>
                   <tr>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>L3</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#2b6cb0' }}>L3</td>
                     <td><strong>NS-SPORT</strong> (Azul Cobalto)</td>
                     <td style={{ fontFamily: 'var(--font-mono)' }}>8 pzas / caja</td>
                     <td><span className="badge badge-ok">Activa</span></td>
@@ -122,8 +122,8 @@ export default function Inicio() {
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <span className="badge badge-info" style={{ minWidth: '60px', justifyContent: 'center' }}>PASO 1</span>
                 <div>
-                  <strong style={{ color: '#f1f5f9' }}>Ensamble & Serialización</strong>
-                  <div style={{ fontSize: '12px', color: '#8493a8' }}>
+                  <strong style={{ color: '#1f2933' }}>Ensamble & Serialización</strong>
+                  <div style={{ fontSize: '12px', color: '#667085' }}>
                     Captura obligatoria de código de serie único por operador en estación.
                   </div>
                 </div>
@@ -132,8 +132,8 @@ export default function Inicio() {
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <span className="badge badge-warn" style={{ minWidth: '60px', justifyContent: 'center' }}>PASO 2</span>
                 <div>
-                  <strong style={{ color: '#f1f5f9' }}>Banco de Pruebas Acústicas</strong>
-                  <div style={{ fontSize: '12px', color: '#8493a8' }}>
+                  <strong style={{ color: '#1f2933' }}>Banco de Pruebas Acústicas</strong>
+                  <div style={{ fontSize: '12px', color: '#667085' }}>
                     Inspección funcional: encendido, respuesta de frecuencia, carga y bluetooth.
                   </div>
                 </div>
@@ -142,8 +142,8 @@ export default function Inicio() {
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <span className="badge badge-ok" style={{ minWidth: '60px', justifyContent: 'center' }}>PASO 3</span>
                 <div>
-                  <strong style={{ color: '#f1f5f9' }}>Empaque en Cajas Maestras</strong>
-                  <div style={{ fontSize: '12px', color: '#8493a8' }}>
+                  <strong style={{ color: '#1f2933' }}>Empaque en Cajas Maestras</strong>
+                  <div style={{ fontSize: '12px', color: '#667085' }}>
                     Bloqueo de empaque si la pieza no cuenta con dictamen formal [Aprobada].
                   </div>
                 </div>
@@ -152,8 +152,8 @@ export default function Inicio() {
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <span className="badge badge-neutral" style={{ minWidth: '60px', justifyContent: 'center' }}>PASO 4</span>
                 <div>
-                  <strong style={{ color: '#f1f5f9' }}>Embarque y Despacho</strong>
-                  <div style={{ fontSize: '12px', color: '#8493a8' }}>
+                  <strong style={{ color: '#1f2933' }}>Embarque y Despacho</strong>
+                  <div style={{ fontSize: '12px', color: '#667085' }}>
                     Asignación de cajas selladas a transportistas autorizados y salida de andén.
                   </div>
                 </div>
@@ -167,7 +167,7 @@ export default function Inicio() {
       <div className="panel">
         <div className="panel-header">
           <h2>Bitácora Reciente de Operaciones</h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#8493a8' }}>
+          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#667085' }}>
             Auditoría de Planta en Tiempo Real
           </span>
         </div>
@@ -184,7 +184,7 @@ export default function Inicio() {
               <tbody>
                 {ultimosEventos.map((ev) => (
                   <tr key={ev.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{ev.fecha}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>{ev.fecha}</td>
                     <td>
                       <span className="badge badge-info" style={{ fontSize: '10px' }}>
                         {ev.modulo}

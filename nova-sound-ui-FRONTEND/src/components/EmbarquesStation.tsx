@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePlanta, CATALOGO_CAJAS } from '../context/PlantaContext';
-import Icon from './common/Icon';
+import Icon from './common/LogoBocina';
 
 interface TransportistaItem {
   id: number;
@@ -137,7 +137,7 @@ export const EmbarquesStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="local_shipping" color="#38bdf8" size="20px" />
+            <Icon name="local_shipping" color="#2b6cb0" size="20px" />
             Módulo de Embarques & Despacho Logístico de Andén
           </h2>
           <span className="badge badge-info">CONTROL DE REMISIONES</span>
@@ -172,7 +172,7 @@ export const EmbarquesStation: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '320px' }}>
-              <label htmlFor="select-emb" style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase' }}>
+              <label htmlFor="select-emb" style={{ fontSize: '12px', fontWeight: 700, color: '#1f2933', textTransform: 'uppercase' }}>
                 Orden de Embarque:
               </label>
               <select
@@ -211,8 +211,8 @@ export const EmbarquesStation: React.FC = () => {
             <form
               onSubmit={handleCrearEmbarque}
               style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #28374d',
+                backgroundColor: '#f5f7f9',
+                border: '1px solid #cfd6dd',
                 padding: '16px',
                 borderRadius: '2px',
                 marginBottom: '16px',
@@ -221,8 +221,8 @@ export const EmbarquesStation: React.FC = () => {
                 gap: '12px',
               }}
             >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="schedule_send" size="16px" color="#38bdf8" />
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#2b6cb0', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Icon name="schedule_send" size="16px" color="#2b6cb0" />
                 Programar Nueva Salida de Andén (embarque)
               </span>
 
@@ -292,8 +292,8 @@ export const EmbarquesStation: React.FC = () => {
           {embarqueActivo && (
             <div
               style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #233145',
+                backgroundColor: '#f5f7f9',
+                border: '1px solid #cfd6dd',
                 padding: '16px',
                 borderRadius: '2px',
                 display: 'grid',
@@ -303,36 +303,36 @@ export const EmbarquesStation: React.FC = () => {
               }}
             >
               <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Folio Embarque:</span>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: '#38bdf8' }}>
+                <span style={{ fontSize: '11px', color: '#667085', textTransform: 'uppercase' }}>Folio Embarque:</span>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#2b6cb0' }}>
                   {embarqueActivo.referencia_embarque}
                 </div>
               </div>
 
               <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Cliente:</span>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#f1f5f9' }}>
+                <span style={{ fontSize: '11px', color: '#667085', textTransform: 'uppercase' }}>Cliente:</span>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#1f2933' }}>
                   {clienteActivo?.nombre_cliente}
                 </div>
               </div>
 
               <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Transporte / RFC:</span>
-                <div style={{ fontSize: '13px', color: '#f1f5f9' }}>
+                <span style={{ fontSize: '11px', color: '#667085', textTransform: 'uppercase' }}>Transporte / RFC:</span>
+                <div style={{ fontSize: '13px', color: '#1f2933' }}>
                   {transportistaActivo?.nombre}
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>RFC: {transportistaActivo?.rfc}</div>
+                <div style={{ fontSize: '11px', color: '#7b8794' }}>RFC: {transportistaActivo?.rfc}</div>
               </div>
 
               <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Fecha Salida:</span>
-                <div style={{ fontSize: '13px', color: '#f1f5f9' }}>
+                <span style={{ fontSize: '11px', color: '#667085', textTransform: 'uppercase' }}>Fecha Salida:</span>
+                <div style={{ fontSize: '13px', color: '#1f2933' }}>
                   {embarqueActivo.fecha_programada}
                 </div>
               </div>
 
               <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Estado de Andén:</span>
+                <span style={{ fontSize: '11px', color: '#667085', textTransform: 'uppercase' }}>Estado de Andén:</span>
                 <div>
                   <span className={`badge ${embarqueActivo.estado === 'En Tránsito' ? 'badge-ok' : 'badge-warn'}`}>
                     {embarqueActivo.estado.toUpperCase()}
@@ -348,10 +348,10 @@ export const EmbarquesStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="move_to_inbox" size="18px" color="#38bdf8" />
+            <Icon name="move_to_inbox" size="18px" color="#2b6cb0" />
             Asignación de Cajas a la Carga (embarque_caja)
           </h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#8493a8' }}>
+          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#667085' }}>
             {cajasDisponibles.length} Cajas Disponibles en Almacén
           </span>
         </div>
@@ -387,7 +387,7 @@ export const EmbarquesStation: React.FC = () => {
             </button>
           </form>
 
-          <span style={{ display: 'block', marginTop: '8px', fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
+          <span style={{ display: 'block', marginTop: '8px', fontSize: '11px', color: '#7b8794', fontFamily: 'var(--font-mono)' }}>
             * Regla estricta: Solo cajas con dictamen de <strong>Cerrada</strong> en Empaque pueden ser asignadas a la unidad de transporte.
           </span>
         </div>
@@ -397,7 +397,7 @@ export const EmbarquesStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="receipt_long" size="18px" color="#38bdf8" />
+            <Icon name="receipt_long" size="18px" color="#2b6cb0" />
             Manifiesto de Carga: {embarqueActivo?.referencia_embarque}
           </h2>
           <span className="badge badge-info">
@@ -421,7 +421,7 @@ export const EmbarquesStation: React.FC = () => {
               <tbody>
                 {cajasEnEmbarque.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', color: '#64748b', padding: '16px' }}>
+                    <td colSpan={6} style={{ textAlign: 'center', color: '#7b8794', padding: '16px' }}>
                       (No hay cajas cargadas en este embarque. Seleccione una caja arriba para agregarla).
                     </td>
                   </tr>
@@ -431,8 +431,8 @@ export const EmbarquesStation: React.FC = () => {
                     const pzs = unidades.filter((u) => u.id_caja === c.id).length;
                     return (
                       <tr key={c.id}>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>#{idx + 1}</td>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>#{idx + 1}</td>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#2b6cb0' }}>
                           {c.codigo_caja}
                         </td>
                         <td>{cat?.tipo_caja}</td>
@@ -454,7 +454,7 @@ export const EmbarquesStation: React.FC = () => {
                               Bajar de Carga
                             </button>
                           ) : (
-                            <span style={{ fontSize: '11px', color: '#64748b' }}>Bloqueado</span>
+                            <span style={{ fontSize: '11px', color: '#7b8794' }}>Bloqueado</span>
                           )}
                         </td>
                       </tr>
@@ -469,8 +469,8 @@ export const EmbarquesStation: React.FC = () => {
           <div
             style={{
               padding: '14px 16px',
-              backgroundColor: '#161f2c',
-              borderTop: '1px solid #233145',
+              backgroundColor: '#f5f7f9',
+              borderTop: '1px solid #cfd6dd',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -479,8 +479,8 @@ export const EmbarquesStation: React.FC = () => {
             }}
           >
             <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
-              <span style={{ color: '#8493a8' }}>TOTAL REMISIÓN:</span>{' '}
-              <strong style={{ color: '#f1f5f9' }}>{cajasEnEmbarque.length} cajas selladas</strong> ({totalPiezasEnEmbarque} bocinas terminadas).
+              <span style={{ color: '#667085' }}>TOTAL REMISIÓN:</span>{' '}
+              <strong style={{ color: '#1f2933' }}>{cajasEnEmbarque.length} cajas selladas</strong> ({totalPiezasEnEmbarque} bocinas terminadas).
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -507,7 +507,7 @@ export const EmbarquesStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="history" size="18px" color="#38bdf8" />
+            <Icon name="history" size="18px" color="#2b6cb0" />
             Bitácora de Salidas y Trazabilidad (embarque_historial)
           </h2>
           <span className="badge badge-neutral">{historialEmbarque.length} Eventos</span>
@@ -526,10 +526,10 @@ export const EmbarquesStation: React.FC = () => {
               <tbody>
                 {historialEmbarque.map((ev) => (
                   <tr key={ev.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{ev.fecha_hora}</td>
-                    <td style={{ fontWeight: 600, color: '#38bdf8' }}>{ev.operacion}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>{ev.fecha_hora}</td>
+                    <td style={{ fontWeight: 600, color: '#2b6cb0' }}>{ev.operacion}</td>
                     <td>{ev.detalle}</td>
-                    <td style={{ fontSize: '11px', color: '#cbd5e1' }}>{ev.usuario}</td>
+                    <td style={{ fontSize: '11px', color: '#475467' }}>{ev.usuario}</td>
                   </tr>
                 ))}
               </tbody>
