@@ -1,401 +1,278 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { usePlanta } from '../context/PlantaContext';
-import { EstadosCalidadEnum } from '../types/database';
-import Icon from './common/Icon';
+import { useState } from 'react';
+import { usePlanta, CATALOGO_DEFECTOS_OFICIALES } from '../context/PlantaContext';
 
-const API_URL = 'http://localhost:4000/api';
+export default function ReportesStation() {
+  const { unidades, ordenes, inspeccionesCalidad, cierresTurno, embarques } = usePlanta();
 
-interface OrdenResumen {
-  id: number;
-  folio: string;
-  cliente: string;
-  modelo: string;
-  color: string;
-  cantidad_solicitada: number;
-  cantidad_ensamblada: number;
-  cantidad_aprobada: number;
-  cantidad_scrap: number;
-  estado: 'En Proceso' | 'Completada' | 'Pendiente';
-  linea: string;
-}
+  const [filtroPeriodo, setFiltroPeriodo] = useState('HOY');
 
-interface DefectoFrecuencia {
-  id: number;
-  categoria: string;
-  descripcion: string;
-  frecuencia: number;
-  porcentaje: number;
-}
+  // Cálculos estadísticos
+  const totalUnidades = unidades.length || 1;
+  const aprobadas = unidades.filter((u) => u.id_estado_calidad === 1).length;
+  const retrabajo = unidades.filter((u) => u.id_estado_calidad === 2).length;
+  const retencion = unidades.filter((u) => u.id_estado_calidad === 3).length;
+  const scrap = unidades.filter((u) => u.id_estado_calidad === 4).length;
 
-export const ReportesStation: React.FC = () => {
-  const { unidades, cajas, sesion, registrarBitacora, historialUnidades } = usePlanta();
+  const pctAprobadas = Math.round((aprobadas / totalUnidades) * 100);
+  const pctRetrabajo = Math.round((retrabajo / totalUnidades) * 100);
+  const pctRetencion = Math.round((retencion / totalUnidades) * 100);
+  const pctScrap = Math.round((scrap / totalUnidades) * 100);
 
-  // Filtros operativos
-  const [lineaFiltro, setLineaFiltro] = useState<string>('TODAS');
-  const [turnoFiltro, setTurnoFiltro] = useState<string>(sesion.turno.nombre_turno);
-  const [mensajeExportar, setMensajeExportar] = useState<string | null>(null);
+  // Pareto por categoría oficial
+  const conteoCategorias: Record<string, number> = {
+    Apariencia: 0,
+    Funcional: 0,
+    Identificación: 0,
+    Empaque: 0,
+  };
 
-  const [ordenes, setOrdenes] = useState<OrdenResumen[]>([]);
-
-  useEffect(() => {
-    fetch(`${API_URL}/ordenes`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setOrdenes(
-            data.map((o: any) => ({
-              id: o.id,
-              folio: o.folio || `ORD-${String(o.id).padStart(3, '0')}`,
-              cliente: o.nombre_cliente || 'AudioMax',
-              modelo: o.nombre_modelo || 'NS-PRO',
-              color: o.nombre_color || 'Negro',
-              cantidad_solicitada: Number(o.cantidad) || 0,
-              cantidad_ensamblada: Number(o.cantidad_ensamblada) || 0,
-              cantidad_aprobada: Number(o.cantidad_aprobada) || 0,
-              cantidad_scrap: Number(o.cantidad_scrap) || 0,
-              estado: (o.estado === 'Completada' ? 'Completada' : o.estado === 'Pendiente' ? 'Pendiente' : 'En Proceso') as any,
-              linea: o.nombre_linea || 'L1',
-            }))
-          );
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  // Filtrado de órdenes
-  const ordenesFiltradas = ordenes.filter((ord) => {
-    if (lineaFiltro === 'TODAS') return true;
-    return ord.linea === lineaFiltro;
+  inspeccionesCalidad.forEach((i) => {
+    if (i.id_defecto) {
+      const def = CATALOGO_DEFECTOS_OFICIALES.find((d) => d.id === i.id_defecto);
+      if (def && conteoCategorias[def.categoria] !== undefined) {
+        conteoCategorias[def.categoria]++;
+      }
+    }
   });
 
-  // Métricas calculadas en tiempo real desde el SSOT de PlantaContext
-  const totalEnsamblado = unidades.length;
-  const totalAprobadas = unidades.filter((u) => u.id_estado_calidad === EstadosCalidadEnum.APROBADA).length;
-  const totalRetrabajo = unidades.filter((u) => u.id_estado_calidad === EstadosCalidadEnum.EN_RETRABAJO).length;
-  const totalRetencion = unidades.filter((u) => u.id_estado_calidad === EstadosCalidadEnum.EN_RETENCION).length;
-  const totalScrap = unidades.filter((u) => u.id_estado_calidad === EstadosCalidadEnum.SCRAP).length;
-  const cajasSelladas = cajas.filter((c) => c.estado === 'Cerrada').length;
-  const piezasEmpacadas = unidades.filter((u) => u.id_caja !== null).length;
+  const exportarReporteCsv = () => {
+    const headers = 'serie,modelo,color,cliente,estado_calidad,linea,turno,fecha\n';
+    const rows = unidades
+      .map(
+        (u) =>
+          `${u.numero_serie},${u.modelo},${u.color},${u.cliente},${u.estado_calidad_nombre},L${u.id_linea},T${u.id_turno},${u.fecha_ensamble}`
+      )
+      .join('\n');
 
-  const metaTurno = lineaFiltro === 'TODAS' ? 100 : 40;
-  const porcentajeAvanceMeta = Math.min(100, Math.round((totalEnsamblado / metaTurno) * 100));
-  const tasaAprobacion = totalEnsamblado > 0 ? ((totalAprobadas / totalEnsamblado) * 100).toFixed(1) : '0.0';
-  const tasaScrap = totalEnsamblado > 0 ? ((totalScrap / totalEnsamblado) * 100).toFixed(1) : '0.0';
-
-  // Pareto de fallas calculado dinámicamente desde el historial de calidad real
-  const defectosFrecuencia: DefectoFrecuencia[] = useMemo(() => {
-    const fallas = historialUnidades.filter(
-      (h) => h.estado_nuevo === 'En retrabajo' || h.estado_nuevo === 'Scrap' || h.estado_nuevo === 'En retención'
-    );
-    if (fallas.length === 0) {
-      return [
-        { id: 1, categoria: 'Ensamble/Audio', descripcion: 'Falla acústica o ensamble', frecuencia: 0, porcentaje: 0 },
-      ];
-    }
-    const countMap: Record<string, number> = {};
-    fallas.forEach((f) => {
-      const desc = f.motivo || 'Falla no especificada';
-      countMap[desc] = (countMap[desc] || 0) + 1;
-    });
-    const total = fallas.length;
-    return Object.entries(countMap)
-      .map(([descripcion, frecuencia], idx) => ({
-        id: idx + 1,
-        categoria:
-          descripcion.toLowerCase().includes('audio') ||
-          descripcion.toLowerCase().includes('carga') ||
-          descripcion.toLowerCase().includes('bluetooth')
-            ? 'Funcional'
-            : 'Ensamble/Apariencia',
-        descripcion,
-        frecuencia,
-        porcentaje: Number(((frecuencia / total) * 100).toFixed(1)),
-      }))
-      .sort((a, b) => b.frecuencia - a.frecuencia);
-  }, [historialUnidades]);
-
-  const handleExportar = () => {
-    registrarBitacora('Reportes', `Corte de turno generado: ${totalEnsamblado} piezas, ${totalAprobadas} aprobadas, ${totalScrap} scrap`);
-    setMensajeExportar(`✓ Reporte de Turno [${turnoFiltro} | Línea: ${lineaFiltro}] consolidado y registrado en bitácora.`);
-    setTimeout(() => setMensajeExportar(null), 4000);
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Reporte_Calidad_Nova_Sound_${new Date().toISOString().substring(0, 10)}.csv`;
+    a.click();
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* 1. CABECERA Y FILTROS */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="monitoring" color="#0ea5e9" size="20px" />
-            Panel de Métricas, Rendimiento de Calidad y Reportes de Turno
-          </h2>
-          <span className="badge badge-info">KPIs TELEMETRÍA EN VIVO</span>
+    <div className="station-container">
+      {/* HEADER ENDFIELD */}
+      <div className="station-header tex-carbon">
+        <div className="station-header-left">
+          <div className="station-deco-sq">08</div>
+          <div className="station-title-box">
+            <span className="station-badge-code">[ANALÍTICA // TABLEROS DE RENDIMIENTO]</span>
+            <h1 className="station-title">Reportes, Pareto y Métricas Ejecutivas</h1>
+            <span className="station-subtitle">
+              Distribución de calidad segregada y análisis pareto de defectos oficiales
+            </span>
+          </div>
         </div>
-
-        <div className="panel-body">
-          {mensajeExportar && (
-            <div className="alert-banner alert-banner-ok">
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="check_circle" size="16px" />
-                {mensajeExportar}
-              </span>
-            </div>
-          )}
-
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '12px',
-            }}
-          >
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label htmlFor="filtro-linea" style={{ textTransform: 'uppercase' }}>Línea:</label>
-                <select
-                  id="filtro-linea"
-                  value={lineaFiltro}
-                  onChange={(e) => setLineaFiltro(e.target.value)}
-                  style={{ minWidth: '180px' }}
-                >
-                  <option value="TODAS">Todas las Líneas (L1, L2, L3)</option>
-                  <option value="L1">Línea L1 (NS-PRO / NS-MAX)</option>
-                  <option value="L2">Línea L2 (NS-MINI)</option>
-                  <option value="L3">Línea L3 (NS-SPORT)</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label htmlFor="filtro-turno" style={{ textTransform: 'uppercase' }}>Turno:</label>
-                <select
-                  id="filtro-turno"
-                  value={turnoFiltro}
-                  onChange={(e) => setTurnoFiltro(e.target.value)}
-                  style={{ minWidth: '180px' }}
-                >
-                  <option value="Mañana">Turno 1 - Mañana (06:00 - 14:00)</option>
-                  <option value="Tarde">Turno 2 - Tarde (14:00 - 22:00)</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button" className="btn" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => window.print()}>
-                <Icon name="print" size="16px" />
-                Imprimir Corte
+        <div className="station-header-right">
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {['HOY', 'SEMANA', 'MES'].map((p) => (
+              <button
+                key={p}
+                onClick={() => setFiltroPeriodo(p)}
+                className={`btn ${filtroPeriodo === p ? 'btn-yellow' : 'btn-dark'}`}
+                style={{ height: '2.2rem', padding: '0 0.8rem', fontSize: '0.7rem' }}
+              >
+                {p}
               </button>
-              <button type="button" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleExportar}>
-                <Icon name="bookmark" size="16px" />
-                Consolidar Turno en Bitácora
-              </button>
-            </div>
+            ))}
+            <button onClick={exportarReporteCsv} className="btn btn-carbon" style={{ height: '2.2rem' }}>
+              EXPORTAR CSV
+            </button>
           </div>
         </div>
       </div>
 
-      {/* 2. KPIs CONSOLIDADOS */}
-      <div className="kpi-grid">
-        <div className="kpi-card">
-          <span className="kpi-label">Ensambladas Hoy</span>
-          <div className="kpi-value">
-            {totalEnsamblado} <span style={{ fontSize: '13px', color: '#64748b' }}>/ {metaTurno}</span>
+      <div className="station-body">
+        {/* KPIS EJECUTIVOS */}
+        <div className="kpi-row">
+          <div className="kpi-card">
+            <span className="kpi-label">FIRST PASS YIELD (FPY)</span>
+            <span className="kpi-value" style={{ color: 'var(--ok)' }}>
+              {pctAprobadas}%
+            </span>
+            <span className="kpi-delta" style={{ color: 'var(--ok)' }}>
+              [Calidad directa a empaque]
+            </span>
           </div>
-          <span className="kpi-subtext" style={{ color: '#38bdf8' }}>
-            Meta: {porcentajeAvanceMeta}% alcanzado
-          </span>
-        </div>
-
-        <div className="kpi-card" style={{ borderColor: 'rgba(16, 185, 129, 0.4)' }}>
-          <span className="kpi-label" style={{ color: '#10b981' }}>Piezas Aprobadas (FPY)</span>
-          <div className="kpi-value" style={{ color: '#10b981' }}>{totalAprobadas}</div>
-          <span className="kpi-subtext" style={{ color: '#10b981' }}>
-            {tasaAprobacion}% de aprobación en primera pasada
-          </span>
-        </div>
-
-        <div className="kpi-card" style={{ borderColor: 'rgba(239, 68, 68, 0.4)' }}>
-          <span className="kpi-label" style={{ color: '#ef4444' }}>Scrap Definitivo</span>
-          <div className="kpi-value" style={{ color: '#ef4444' }}>{totalScrap}</div>
-          <span className="kpi-subtext" style={{ color: '#ef4444' }}>
-            Tasa de merma: {tasaScrap}%
-          </span>
-        </div>
-
-        <div className="kpi-card" style={{ borderColor: 'rgba(245, 158, 11, 0.4)' }}>
-          <span className="kpi-label" style={{ color: '#f59e0b' }}>En Retrabajo / Retención</span>
-          <div className="kpi-value" style={{ color: '#f59e0b' }}>{totalRetrabajo}</div>
-          <span className="kpi-subtext" style={{ color: '#f59e0b' }}>
-            {totalRetencion} pzas en retención preventiva
-          </span>
-        </div>
-
-        <div className="kpi-card">
-          <span className="kpi-label">Cajas Embaladas</span>
-          <div className="kpi-value" style={{ color: '#38bdf8' }}>{cajasSelladas}</div>
-          <span className="kpi-subtext">{piezasEmpacadas} pzas terminadas</span>
-        </div>
-      </div>
-
-      {/* 3. DISTRIBUCIÓN DE CALIDAD & ANÁLISIS DE FALLAS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '16px' }}>
-        {/* Distribución */}
-        <div className="panel">
-          <div className="panel-header">
-            <h2>
-              <Icon name="pie_chart" size="18px" color="#38bdf8" />
-              Distribución de Calidad en Planta (SSOT)
-            </h2>
-            <span className="badge badge-neutral">{totalEnsamblado} Evaluadas</span>
+          <div className="kpi-card">
+            <span className="kpi-label">TOTAL UNIDADES TRAZABLES</span>
+            <span className="kpi-value">{unidades.length}</span>
+            <span className="kpi-delta" style={{ color: 'var(--info)' }}>
+              [En base de datos SSOT]
+            </span>
           </div>
-          <div className="panel-body">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', marginBottom: '4px' }}>
-                  <span>Aprobadas ({totalAprobadas} pzas)</span>
-                  <span style={{ color: '#10b981', fontWeight: 700 }}>{tasaAprobacion}%</span>
+          <div className="kpi-card">
+            <span className="kpi-label">CIERRES FORMALES</span>
+            <span className="kpi-value">{cierresTurno.length}</span>
+            <span className="kpi-delta" style={{ color: 'var(--accent)' }}>
+              [Turnos consolidados]
+            </span>
+          </div>
+          <div className="kpi-card">
+            <span className="kpi-label">EMBARQUES DESPACHADOS</span>
+            <span className="kpi-value">
+              {embarques.filter((e) => e.estado === 'Despachado').length}
+            </span>
+            <span className="kpi-delta" style={{ color: 'var(--ok)' }}>
+              [Entregas validadas]
+            </span>
+          </div>
+        </div>
+
+        {/* DISTRIBUCIÓN DE CALIDAD Y PARETO */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          {/* DISTRIBUCIÓN DE CALIDAD SEPARADA (P-31) */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">DISTRIBUCIÓN DE CALIDAD SEPARADA (P-31)</span>
+              <span className="badge badge-accent">DISPOSITION_BREAKDOWN</span>
+            </div>
+            <div className="panel-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* 1. APROBADA */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.8rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--ok)' }}>1. APROBADA (LIBERADA)</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>
+                      {aprobadas} pzas ({pctAprobadas}%)
+                    </span>
+                  </div>
+                  <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
+                    <div style={{ height: '100%', width: `${pctAprobadas}%`, background: 'var(--ok)' }} />
+                  </div>
                 </div>
-                <div className="progress-track" style={{ height: '8px' }}>
-                  <div className="progress-fill success" style={{ width: `${tasaAprobacion}%` }} />
+
+                {/* 2. RETRABAJO (SEPARADO) */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.8rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--warn)' }}>2. EN RETRABAJO (CORRECCIÓN)</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>
+                      {retrabajo} pzas ({pctRetrabajo}%)
+                    </span>
+                  </div>
+                  <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
+                    <div style={{ height: '100%', width: `${pctRetrabajo}%`, background: 'var(--warn)' }} />
+                  </div>
+                </div>
+
+                {/* 3. RETENCIÓN (SEPARADO) */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.8rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--danger)' }}>3. EN RETENCIÓN (BLOQUEO CALIDAD)</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>
+                      {retencion} pzas ({pctRetencion}%)
+                    </span>
+                  </div>
+                  <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
+                    <div style={{ height: '100%', width: `${pctRetencion}%`, background: 'var(--danger)' }} />
+                  </div>
+                </div>
+
+                {/* 4. SCRAP */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.8rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--gray-300)' }}>4. SCRAP (MERMA NO RECUPERABLE)</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>
+                      {scrap} pzas ({pctScrap}%)
+                    </span>
+                  </div>
+                  <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
+                    <div style={{ height: '100%', width: `${pctScrap}%`, background: 'var(--gray-400)' }} />
+                  </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', marginBottom: '4px' }}>
-                  <span>En Retrabajo ({totalRetrabajo} pzas)</span>
-                  <span style={{ color: '#f59e0b', fontWeight: 700 }}>
-                    {totalEnsamblado > 0 ? ((totalRetrabajo / totalEnsamblado) * 100).toFixed(1) : 0}%
-                  </span>
-                </div>
-                <div className="progress-track" style={{ height: '8px' }}>
-                  <div
-                    className="progress-fill warn"
-                    style={{ width: `${totalEnsamblado > 0 ? (totalRetrabajo / totalEnsamblado) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', marginBottom: '4px' }}>
-                  <span>Scrap ({totalScrap} pzas)</span>
-                  <span style={{ color: '#ef4444', fontWeight: 700 }}>{tasaScrap}%</span>
-                </div>
-                <div className="progress-track" style={{ height: '8px' }}>
-                  <div
-                    className="progress-fill"
-                    style={{
-                      width: `${tasaScrap}%`,
-                      backgroundColor: '#ef4444',
-                    }}
-                  />
-                </div>
+          {/* PARETO POR CATEGORÍA OFICIAL (P-33) */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">PARETO DE DEFECTOS OFICIAL (RF-14, P-33)</span>
+              <span className="badge badge-accent">ROOT_CAUSE</span>
+            </div>
+            <div className="panel-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {Object.entries(conteoCategorias).map(([cat, cant]) => {
+                  const totalDef = Object.values(conteoCategorias).reduce((a, b) => a + b, 0) || 1;
+                  const pct = Math.round((cant / totalDef) * 100);
+                  return (
+                    <div key={cat}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.8rem' }}>
+                        <span style={{ fontWeight: 700, color: '#fff' }}>[{cat.toUpperCase()}]</span>
+                        <span style={{ fontFamily: 'var(--font-mono)' }}>
+                          {cant} incidencias ({pct}%)
+                        </span>
+                      </div>
+                      <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: 'var(--accent)' }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Pareto de Fallas */}
+        {/* TABLA DE AVANCE DE ÓRDENES */}
         <div className="panel">
           <div className="panel-header">
-            <h2>
-              <Icon name="bar_chart" size="18px" color="#ef4444" />
-              Pareto de Fallas Más Frecuentes (catalogo_defectos)
-            </h2>
-            <span className="badge badge-danger">Fallas Detectadas</span>
+            <span className="panel-title">BALANCE DE CUMPLIMIENTO POR ORDEN</span>
+            <span className="badge badge-accent">PROGRESS_TRACK</span>
           </div>
           <div className="panel-body" style={{ padding: 0 }}>
-            <div className="table-wrapper" style={{ border: 'none' }}>
-              <table className="data-table">
+            <div className="table-container">
+              <table className="tech-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '40px' }}>#</th>
-                    <th>Categoría</th>
-                    <th>Defecto</th>
-                    <th>Incidencias</th>
-                    <th>%</th>
+                    <th>FOLIO</th>
+                    <th>CLIENTE</th>
+                    <th>MODELO // COLOR</th>
+                    <th>COMPROMISO</th>
+                    <th>ENSAMBLADAS</th>
+                    <th>APROBADAS</th>
+                    <th>AVANCE</th>
+                    <th>ESTADO</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {defectosFrecuencia.map((def, idx) => (
-                    <tr key={def.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>#{idx + 1}</td>
-                      <td>
-                        <span className="badge badge-warn" style={{ fontSize: '10px' }}>
-                          {def.categoria}
-                        </span>
-                      </td>
-                      <td>{def.descripcion}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{def.frecuencia}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>{def.porcentaje}%</td>
-                    </tr>
-                  ))}
+                  {ordenes.map((ord) => {
+                    const avancePct = Math.min(100, Math.round(((ord.piezas_ensambladas || 0) / ord.cantidad) * 100));
+                    return (
+                      <tr key={ord.id}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent)' }}>
+                          {ord.folio}
+                        </td>
+                        <td>{ord.cliente_nombre}</td>
+                        <td>
+                          {ord.modelo_nombre} ({ord.color_nombre})
+                        </td>
+                        <td style={{ fontFamily: 'var(--font-mono)' }}>{ord.fecha_compromiso}</td>
+                        <td>{ord.piezas_ensambladas || 0} pzas</td>
+                        <td style={{ color: 'var(--ok)' }}>{ord.piezas_aprobadas || 0} pzas</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ width: '80px', height: '6px', background: 'var(--dark-700)' }}>
+                              <div style={{ height: '100%', width: `${avancePct}%`, background: 'var(--accent)' }} />
+                            </div>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{avancePct}%</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="badge badge-accent">{ord.estado}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       </div>
-
-      {/* 4. SEGUIMIENTO DE ÓRDENES */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="table_chart" size="18px" color="#38bdf8" />
-            Seguimiento de Órdenes de Producción (Tabla ordenes)
-          </h2>
-          <span className="badge badge-neutral">{ordenesFiltradas.length} Órdenes</span>
-        </div>
-        <div className="panel-body" style={{ padding: 0 }}>
-          <div className="table-wrapper" style={{ border: 'none' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Folio</th>
-                  <th>Cliente</th>
-                  <th>Modelo / Color</th>
-                  <th>Línea</th>
-                  <th>Avance Físico</th>
-                  <th>Aprobadas</th>
-                  <th>Scrap</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ordenesFiltradas.map((ord) => {
-                  const pct = Math.round((ord.cantidad_ensamblada / ord.cantidad_solicitada) * 100);
-                  let badge = 'badge-info';
-                  if (ord.estado === 'Completada') badge = 'badge-ok';
-                  else if (ord.estado === 'Pendiente') badge = 'badge-neutral';
-
-                  return (
-                    <tr key={ord.id}>
-                      <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>
-                        {ord.folio}
-                      </td>
-                      <td>{ord.cliente}</td>
-                      <td>{ord.modelo} ({ord.color})</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{ord.linea}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)' }}>
-                        {ord.cantidad_ensamblada} / {ord.cantidad_solicitada} ({pct}%)
-                      </td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#10b981' }}>
-                        {ord.cantidad_aprobada}
-                      </td>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#ef4444' }}>{ord.cantidad_scrap}</td>
-                      <td>
-                        <span className={`badge ${badge}`}>{ord.estado}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     </div>
   );
-};
-
-export default ReportesStation;
+}

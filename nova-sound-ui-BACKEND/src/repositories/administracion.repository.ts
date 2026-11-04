@@ -6,10 +6,10 @@ export class ParametrosRepository {
     return res.rows;
   }
 
-  async update(id: number, valor: number) {
+  async update(id: number, valor: string | number) {
     const res = await pool.query(
       'UPDATE parametros_sistema SET valor = $1 WHERE id = $2 RETURNING *;',
-      [valor, id]
+      [String(valor), id]
     );
     return res.rows[0];
   }

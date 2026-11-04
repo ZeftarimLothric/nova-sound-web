@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import { UnidadesController } from '../controllers/unidades.controller.js';
+import { requirePermission } from '../middlewares/auth.middleware.js';
 
 export const unidadesRouter = Router();
 
-// Registro de unidad en Ensamble
-unidadesRouter.post('/ensamble', UnidadesController.registrar);
+// Dictamen formal de calidad (F-05 / F-06 / RN-13 / BD-09)
+unidadesRouter.post('/calidad/dictamen', requirePermission('CALIDAD_DICTAMINAR'), UnidadesController.dictaminar);
+unidadesRouter.post('/dictaminar', requirePermission('CALIDAD_DICTAMINAR'), UnidadesController.dictaminar);
 
-// Dictamen de calidad
-unidadesRouter.post('/calidad/dictamen', UnidadesController.dictaminar);
+// RF-25 / P-42: Consulta integral de trazabilidad por número de serie
+unidadesRouter.get('/trazabilidad/:numero_serie', UnidadesController.getTrazabilidad);
 
 // Consultas
 unidadesRouter.get('/recientes', UnidadesController.getRecientes);

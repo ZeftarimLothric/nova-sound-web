@@ -27,7 +27,7 @@ export class UsuariosRepository {
       data.nomina,
       data.nombre_completo,
       data.usuario_login,
-      data.contrasena_hash || 'hash_default_123',
+      data.contrasena_hash || '$2a$10$vI8aWBnW3fID.ZQ4/ZO1G.q1VGqQ5v/JmJ57c8gW5l7eK6hL4Bv4G',
       data.id_rol,
     ]);
     return res.rows[0];
@@ -50,5 +50,17 @@ export class UsuariosRepository {
       LIMIT 1;
     `, [identifier.trim()]);
     return res.rows[0] || null;
+  }
+
+  // BD-14 / RNF-01b: Obtener permisos asignados al rol para control de accesos RBAC
+  async getPermisosByRol(idRol: number): Promise<string[]> {
+    const res = await pool.query(
+      `SELECT p.codigo_permiso
+       FROM permisos p
+       JOIN rol_permisos rp ON p.id = rp.id_permiso
+       WHERE rp.id_rol = $1;`,
+      [idRol]
+    );
+    return res.rows.map((r) => r.codigo_permiso);
   }
 }

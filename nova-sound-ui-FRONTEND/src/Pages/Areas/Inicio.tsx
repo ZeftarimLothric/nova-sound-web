@@ -1,200 +1,236 @@
 import { usePlanta } from '../../context/PlantaContext';
-import { EstadosCalidadEnum } from '../../types/database';
-import Icon from '../../components/common/Icon';
 
 export default function Inicio() {
-  const { unidades, cajas, embarques, bitacora, sesion } = usePlanta();
+  const {
+    sesion,
+    ordenes,
+    unidades,
+    cierresTurno,
+    cajas,
+    modoMantenimiento,
+  } = usePlanta();
 
-  const totalEnsamblado = unidades.length;
-  const totalAprobadas = unidades.filter((u) => u.id_estado_calidad === EstadosCalidadEnum.APROBADA).length;
-  const totalScrap = unidades.filter((u) => u.id_estado_calidad === EstadosCalidadEnum.SCRAP).length;
-  const totalRetrabajo = unidades.filter((u) => u.id_estado_calidad === EstadosCalidadEnum.EN_RETRABAJO).length;
-  const cajasSelladas = cajas.filter((c) => c.estado === 'Cerrada').length;
-  const embarquesActivos = embarques.length;
-
-  const tasaAprobacion = totalEnsamblado > 0 ? ((totalAprobadas / totalEnsamblado) * 100).toFixed(1) : '100.0';
-  const ultimosEventos = bitacora.slice(0, 6);
+  const totalUnidades = unidades.length;
+  const aprobadas = unidades.filter((u) => u.id_estado_calidad === 1).length;
+  const enRetencion = unidades.filter((u) => u.id_estado_calidad === 3).length;
+  const cajasCerradas = cajas.filter((c) => c.estado === 'Cerrada').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* 1. TELEMETRÍA Y KPIs EN VIVO */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="sensors" size={18} color="#10b981" />
-            Telemetría y Rendimiento de Planta (SSOT)
-          </h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>
-            LÍNEA {sesion.linea.nombre_linea} · TURNO {sesion.turno.nombre_turno.toUpperCase()}
-          </span>
+    <div className="station-container">
+      {/* HEADER ENDFIELD */}
+      <div className="station-header tex-carbon">
+        <div className="station-header-left">
+          <div className="station-deco-sq">00</div>
+          <div className="station-title-box">
+            <span className="station-badge-code">[SCADA_HMI // TELEMETRÍA DE PLANTA]</span>
+            <h1 className="station-title">Centro de Telemetría y Operaciones</h1>
+            <span className="station-subtitle">
+              Estado de piso de manufactura en tiempo real | Línea: {sesion.linea.nombre_linea} | Turno: {sesion.turno.nombre_turno}
+            </span>
+          </div>
         </div>
-        <div className="panel-body">
-          <div className="kpi-grid">
-            <div className="kpi-card">
-              <span className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="precision_manufacturing" size={14} color="#38bdf8" /> Total Ensamblado
-              </span>
-              <div className="kpi-value">{totalEnsamblado} <span style={{ fontSize: '13px', color: '#64748b' }}>PZAS</span></div>
-              <span className="kpi-subtext">Piezas serializadas en piso</span>
-            </div>
-
-            <div className="kpi-card" style={{ borderColor: 'rgba(16, 185, 129, 0.4)' }}>
-              <span className="kpi-label" style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="fact_check" size={14} color="#10b981" /> First-Pass Yield (Calidad)
-              </span>
-              <div className="kpi-value" style={{ color: '#10b981' }}>{tasaAprobacion}%</div>
-              <span className="kpi-subtext">
-                {totalAprobadas} aprobadas · {totalScrap} scrap · {totalRetrabajo} retrabajo
-              </span>
-            </div>
-
-            <div className="kpi-card">
-              <span className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="inventory_2" size={14} color="#38bdf8" /> Cajas Selladas
-              </span>
-              <div className="kpi-value" style={{ color: '#38bdf8' }}>{cajasSelladas} <span style={{ fontSize: '13px', color: '#64748b' }}>CAJAS</span></div>
-              <span className="kpi-subtext">Listas para asignación de andén</span>
-            </div>
-
-            <div className="kpi-card">
-              <span className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="local_shipping" size={14} color="#f59e0b" /> Embarques en Curso
-              </span>
-              <div className="kpi-value" style={{ color: '#f59e0b' }}>{embarquesActivos} <span style={{ fontSize: '13px', color: '#64748b' }}>ÓRDENES</span></div>
-              <span className="kpi-subtext">Control logístico y remisión</span>
+        <div className="station-header-right">
+          <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', textTransform: 'uppercase' }}>
+              ESTADO DEL SISTEMA:
+            </span>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: modoMantenimiento ? 'var(--danger)' : 'var(--ok)' }}>
+              {modoMantenimiento ? '[EN MANTENIMIENTO]' : '[ONLINE // OPERATIVO]'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. ESTADO DE LÍNEAS Y PROTOCOLO INDUSTRIAL */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '16px' }}>
-        {/* Tabla de Líneas */}
-        <div className="panel">
-          <div className="panel-header">
-            <h2>Líneas de Producción y Modelos</h2>
-            <span className="badge badge-ok">Líneas en Servicio</span>
+      <div className="station-body">
+        {/* FILA DE INDICADORES PRINCIPALES */}
+        <div className="kpi-row">
+          <div className="kpi-card">
+            <span className="kpi-label">TOTAL UNIDADES TRAZABLES</span>
+            <span className="kpi-value">{totalUnidades}</span>
+            <span className="kpi-delta" style={{ color: 'var(--ok)' }}>
+              [Con número de serie]
+            </span>
           </div>
-          <div className="panel-body" style={{ padding: 0 }}>
-            <div className="table-wrapper" style={{ border: 'none' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Línea</th>
-                    <th>Modelo de Bocina</th>
-                    <th>Capacidad Caja</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>L1</td>
-                    <td><strong>NS-PRO</strong> (Grafito Mate)</td>
-                    <td style={{ fontFamily: 'var(--font-mono)' }}>6 pzas / caja</td>
-                    <td><span className="badge badge-ok">Activa</span></td>
-                  </tr>
-                  <tr>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>L2</td>
-                    <td><strong>NS-MINI</strong> (Blanco Ártico)</td>
-                    <td style={{ fontFamily: 'var(--font-mono)' }}>12 pzas / caja</td>
-                    <td><span className="badge badge-ok">Activa</span></td>
-                  </tr>
-                  <tr>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>L3</td>
-                    <td><strong>NS-SPORT</strong> (Azul Cobalto)</td>
-                    <td style={{ fontFamily: 'var(--font-mono)' }}>8 pzas / caja</td>
-                    <td><span className="badge badge-ok">Activa</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <div className="kpi-card">
+            <span className="kpi-label">UNIDADES LIBERADAS CALIDAD</span>
+            <span className="kpi-value" style={{ color: 'var(--ok)' }}>
+              {aprobadas}
+            </span>
+            <span className="kpi-delta" style={{ color: 'var(--ok)' }}>
+              [{Math.round((aprobadas / (totalUnidades || 1)) * 100)}% de rendimiento]
+            </span>
+          </div>
+          <div className="kpi-card">
+            <span className="kpi-label">EN RETENCIÓN TÉCNICA</span>
+            <span className="kpi-value" style={{ color: 'var(--danger)' }}>
+              {enRetencion}
+            </span>
+            <span className="kpi-delta" style={{ color: 'var(--danger)' }}>
+              [Bloqueo activo]
+            </span>
+          </div>
+          <div className="kpi-card">
+            <span className="kpi-label">CAJAS LISTAS PARA EMBARQUE</span>
+            <span className="kpi-value">{cajasCerradas}</span>
+            <span className="kpi-delta" style={{ color: 'var(--accent)' }}>
+              [Selladas y verificadas]
+            </span>
           </div>
         </div>
 
-        {/* Protocolo Operativo */}
+        {/* ESTADO DE LÍNEAS L1, L2, L3 */}
         <div className="panel">
           <div className="panel-header">
-            <h2>Flujo de Control en Planta</h2>
-            <span className="badge badge-info">Norma ISO-9001</span>
+            <span className="panel-title">ESTADO TÁCTICO DE LÍNEAS DE PRODUCCIÓN</span>
+            <span className="badge badge-accent">MONITOR_PISO</span>
           </div>
           <div className="panel-body">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <span className="badge badge-info" style={{ minWidth: '60px', justifyContent: 'center' }}>PASO 1</span>
-                <div>
-                  <strong style={{ color: '#f1f5f9' }}>Ensamble & Serialización</strong>
-                  <div style={{ fontSize: '12px', color: '#8493a8' }}>
-                    Captura obligatoria de código de serie único por operador en estación.
-                  </div>
-                </div>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem' }}>
+              {[1, 2, 3].map((num) => {
+                const ordAsignada = ordenes.find((o) => o.id_linea_asignada === num);
+                const esActiva = sesion.linea.id === num;
+                return (
+                  <div
+                    key={num}
+                    style={{
+                      background: 'var(--dark-700)',
+                      border: `1px solid ${esActiva ? 'var(--accent)' : 'var(--dark-500)'}`,
+                      borderLeft: `5px solid ${esActiva ? 'var(--accent)' : 'var(--gray-400)'}`,
+                      padding: '1.25rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.6rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>
+                        LÍNEA 0{num}
+                      </span>
+                      <span className={`badge ${esActiva ? 'badge-accent' : 'badge-dark'}`}>
+                        {esActiva ? 'SELECCIONADA' : 'DISPONIBLE'}
+                      </span>
+                    </div>
 
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <span className="badge badge-warn" style={{ minWidth: '60px', justifyContent: 'center' }}>PASO 2</span>
-                <div>
-                  <strong style={{ color: '#f1f5f9' }}>Banco de Pruebas Acústicas</strong>
-                  <div style={{ fontSize: '12px', color: '#8493a8' }}>
-                    Inspección funcional: encendido, respuesta de frecuencia, carga y bluetooth.
+                    <div style={{ fontSize: '0.8rem', color: 'var(--gray-200)', lineHeight: 1.6 }}>
+                      <div>
+                        Orden activa:{' '}
+                        <strong style={{ color: 'var(--accent)' }}>
+                          {ordAsignada ? ordAsignada.folio : 'Sin orden asignada'}
+                        </strong>
+                      </div>
+                      <div>
+                        Modelo: <strong>{ordAsignada?.modelo_nombre || '--'}</strong> ({ordAsignada?.color_nombre || '--'})
+                      </div>
+                      <div>
+                        Cliente: <strong>{ordAsignada?.cliente_nombre || '--'}</strong>
+                      </div>
+                      <div>
+                        Progreso:{' '}
+                        <strong>
+                          {ordAsignada ? `${ordAsignada.piezas_ensambladas || 0} / ${ordAsignada.cantidad} pzas` : '--'}
+                        </strong>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <span className="badge badge-ok" style={{ minWidth: '60px', justifyContent: 'center' }}>PASO 3</span>
-                <div>
-                  <strong style={{ color: '#f1f5f9' }}>Empaque en Cajas Maestras</strong>
-                  <div style={{ fontSize: '12px', color: '#8493a8' }}>
-                    Bloqueo de empaque si la pieza no cuenta con dictamen formal [Aprobada].
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <span className="badge badge-neutral" style={{ minWidth: '60px', justifyContent: 'center' }}>PASO 4</span>
-                <div>
-                  <strong style={{ color: '#f1f5f9' }}>Embarque y Despacho</strong>
-                  <div style={{ fontSize: '12px', color: '#8493a8' }}>
-                    Asignación de cajas selladas a transportistas autorizados y salida de andén.
-                  </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 3. AUDITORÍA Y BITÁCORA RECIENTE */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>Bitácora Reciente de Operaciones</h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#8493a8' }}>
-            Auditoría de Planta en Tiempo Real
-          </span>
-        </div>
-        <div className="panel-body" style={{ padding: 0 }}>
-          <div className="table-wrapper" style={{ border: 'none' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '140px' }}>Hora</th>
-                  <th style={{ width: '130px' }}>Estación / Módulo</th>
-                  <th>Operación Registrada</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ultimosEventos.map((ev) => (
-                  <tr key={ev.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{ev.fecha}</td>
-                    <td>
-                      <span className="badge badge-info" style={{ fontSize: '10px' }}>
-                        {ev.modulo}
-                      </span>
-                    </td>
-                    <td>{ev.accion}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* RESUMEN DE FLUJO Y CADENA DE CUSTODIA */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
+          {/* ÓRDENES EN CURSO */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">ÓRDENES EN PROCESO DE MANUFACTURA</span>
+              <span className="badge badge-accent">ACTIVE_ORDERS</span>
+            </div>
+            <div className="panel-body" style={{ padding: 0 }}>
+              <div className="table-container">
+                <table className="tech-table">
+                  <thead>
+                    <tr>
+                      <th>FOLIO</th>
+                      <th>CLIENTE</th>
+                      <th>MODELO // COLOR</th>
+                      <th>CANTIDAD</th>
+                      <th>LÍNEA</th>
+                      <th>ESTADO</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ordenes.map((ord) => (
+                      <tr key={ord.id}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent)' }}>
+                          {ord.folio}
+                        </td>
+                        <td>{ord.cliente_nombre}</td>
+                        <td>
+                          {ord.modelo_nombre} ({ord.color_nombre})
+                        </td>
+                        <td style={{ fontFamily: 'var(--font-mono)' }}>{ord.cantidad}</td>
+                        <td>{ord.id_linea_asignada ? `L${ord.id_linea_asignada}` : '--'}</td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              ord.estado === 'En Producción'
+                                ? 'badge-accent'
+                                : ord.estado === 'Asignada'
+                                ? 'badge-info'
+                                : 'badge-dark'
+                            }`}
+                          >
+                            {ord.estado}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* ÚLTIMOS CIERRES DE TURNO */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">ÚLTIMOS CIERRES DE TURNO</span>
+              <span className="badge badge-accent">GOVERNANCE</span>
+            </div>
+            <div className="panel-body">
+              {cierresTurno.length === 0 ? (
+                <div style={{ color: 'var(--gray-400)', fontSize: '0.8rem', textAlign: 'center', padding: '2rem 0' }}>
+                  [SIN CIERRES CONSOLIDADOS PREVIOS]
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {cierresTurno.map((c) => (
+                    <div
+                      key={c.id}
+                      style={{
+                        background: 'var(--dark-700)',
+                        borderLeft: '4px solid var(--ok)',
+                        padding: '0.75rem 1rem',
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                        <strong style={{ color: '#fff' }}>
+                          Línea {c.linea_nombre} - Turno {c.turno_nombre}
+                        </strong>
+                        <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)', fontWeight: 800 }}>
+                          {c.cumplimiento_pct}%
+                        </span>
+                      </div>
+                      <div style={{ color: 'var(--gray-300)', fontSize: '0.75rem' }}>
+                        Líder: {c.lider_nombre} | Ensambladas: {c.piezas_ensambladas} | Liberadas: {c.piezas_aprobadas_calidad}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

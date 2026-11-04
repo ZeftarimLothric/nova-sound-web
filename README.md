@@ -6,260 +6,280 @@
 [![Vite](https://img.shields.io/badge/Vite-8+-646cff?style=flat-square&logo=vite)](https://vitejs.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon.tech-336791?style=flat-square&logo=postgresql)](https://neon.tech/)
 [![Vitest](https://img.shields.io/badge/Tests-Vitest-yellow?style=flat-square&logo=vitest)](https://vitest.dev/)
+[![Audit](https://img.shields.io/badge/Auditor%C3%ADa_Caso-100%25_Cumplido-brightgreen?style=flat-square)](./Nova%20Sound%20–%20Registro%20de%20observaciones%20de%20revisi%C3%B3n.pdf)
 
-Sistema integral de **Ejecución de Manufactura (MES / SCADA Industrial)** desarrollado para la trazabilidad completa, control de calidad bajo protocolo **ISO-9001**, empaque por contenedores, despacho logístico y auditoría en tiempo real para líneas de producción de bocinas inteligentes.
+Sistema integral de **Ejecución de Manufactura (MES / SCADA Industrial)** desarrollado para la trazabilidad completa, control de calidad bajo protocolo **ISO-9001**, empaque por contenedores, despacho logístico y auditoría en tiempo real para líneas de producción de bocinas inteligentes Nova Sound.
 
-Proyecto desarrollado para la materia de **Calidad y Pruebas de Software**.
+---
+
+## 📌 Guía de Puesta al Día para el Equipo (Changelog de Auditoría)
+
+> **Nota para colaboradores y compañeros del equipo:**  
+> Este documento explica en detalle las modificaciones realizadas en este repositorio respecto a la versión inicial de GitHub ([`https://github.com/ZeftarimLothric/nova-sound-web/tree/main`](https://github.com/ZeftarimLothric/nova-sound-web/tree/main)).  
+> Todos los cambios fueron implementados para resolver el 100% de los hallazgos y no conformidades señaladas en el documento docente de auditoría: **`Nova Sound – Registro de observaciones de revisión.pdf`**.  
+>  
+> 📑 **Para ver el desglose técnico archivo por archivo y el mapa de git diff, consulta:** [**`CHANGELOG_AUDITORIA.md`**](./CHANGELOG_AUDITORIA.md).
 
 ---
 
 ## Tabla de Contenidos
-
-1. [Arquitectura del Proyecto](#-arquitectura-del-proyecto)
-2. [Requisitos Previos](#-requisitos-previos)
-3. [Guía de Instalación y Puesta en Marcha](#-guía-de-instalación-y-puesta-en-marcha)
-   - [Paso 1: Clonar el Repositorio](#paso-1-clonar-el-repositorio)
-   - [Paso 2: Base de Datos (Neon PostgreSQL)](#paso-2-base-de-datos-neon-postgresql)
-   - [Paso 3: Configurar y Correr el Backend](#paso-3-configurar-y-correr-el-backend)
-   - [Paso 4: Configurar y Correr el Frontend](#paso-4-configurar-y-correr-el-frontend)
-4. [Credenciales de Acceso y Roles](#-credenciales-de-acceso-y-roles)
-5. [Recorrido del Flujo Operativo (Estaciones)](#-recorrido-del-flujo-operativo-estaciones)
-6. [Pruebas Automatizadas](#-pruebas-automatizadas)
-7. [Guía para Subir a GitHub](#-guía-para-subir-a-github-por-primera-vez)
-8. [Solución de Problemas Frecuentes](#-solución-de-problemas-frecuentes)
+1. [Resumen Comparativo: Versión GitHub Original vs Versión Actual](#1-resumen-comparativo-versión-github-original-vs-versión-actual)
+2. [Solución a los 4 Incidentes Críticos de Planta](#2-solución-a-los-4-incidentes-críticos-de-planta)
+3. [Cambios en Base de Datos y Modelo Relacional (BD-01 a BD-20)](#3-cambios-en-base-de-datos-y-modelo-relacional-bd-01-a-bd-20)
+4. [Cambios en el Backend (API REST y Lógica de Negocio)](#4-cambios-en-el-backend-api-rest-y-lógica-de-negocio)
+5. [Cambios en el Frontend (HMI / Estaciones de Trabajo)](#5-cambios-en-el-frontend-hmi--estaciones-de-trabajo)
+6. [Estructura Actualizada del Repositorio](#6-estructura-actualizada-del-repositorio)
+7. [Guía de Instalación y Puesta en Marcha](#7-guía-de-instalación-y-puesta-en-marcha)
+8. [Ejecución de Pruebas Automatizadas (Vitest)](#8-ejecución-de-pruebas-automatizadas-vitest)
+9. [Catálogo Oficial de Credenciales y los 9 Roles](#9-catálogo-oficial-de-credenciales-y-los-9-roles)
 
 ---
 
-## Arquitectura del Proyecto
+## 1. Resumen Comparativo: Versión GitHub Original vs Versión Actual
 
-El repositorio está organizado como un monorepositorio modular:
+| Área | Estado en GitHub (`main` inicial) | Estado Actual (Modificado tras Auditoría) | Observación / Regla Resuelta |
+| :--- | :--- | :--- | :--- |
+| **Nacimiento de Serie** | Ensamble escaneaba una serie inventada por pieza. | **Ensamble sólo cuenta piezas.** La serie oficial (`NS-2026-XXXX`) nace en **Prueba Funcional** al aprobar los 4 checks. | **F-03, F-04, RN-04, BD-08** |
+| **Prueba Funcional** | No existía estación; 4 casillas estaban dentro de Calidad y venían pre-marcadas. | **Estación y servicios dedicados.** Si falla un check, se registra defecto de catálogo sin otorgar serie. | **F-04, P-17, P-18, P-41, BD-03** |
+| **Módulo de Órdenes** | Inexistente. Las órdenes sólo se veían estáticas en reportes. | **Módulo completo de Órdenes:** Alta manual, importación CSV y asignación a líneas L1/L2/L3 con fecha y usuario. | **F-01, F-02, P-12, P-40** |
+| **Formación de Cajas** | "Apertura de caja" sin cliente, modelo ni color. Sin cierre formal. | **Apertura pidiendo Cliente, Modelo y Color.** Capacidad oficial según modelo. Botones **Cerrar**, **Reapertura** y **Retirar unidad**. | **F-08, F-09, P-21, P-22, BD-01** |
+| **Validación de Empaque** | Permitía meter cualquier pieza sin validar modelo ni color. | **Validación estricta:** Bloquea piezas no aprobadas y piezas de modelo/color diferente al de la caja. | **RN-01, RN-05, RN-06 (Incidente B)** |
+| **Despacho de Embarques** | Confirmación ciega sin verificar el estado de las piezas dentro de las cajas. | **Revalidación en tiempo real:** Bloquea la confirmación de salida si alguna unidad está en estado "En retención" o "Scrap". | **F-10, F-11, P-29, RN-02 (Incidente C)** |
+| **Trazabilidad de Serie** | Sin búsqueda rápida global de unidad. | **Módulo de Trazabilidad 360°:** Búsqueda por serie con genealogía completa (orden, línea, prueba, calidad, caja y embarque). | **P-42, RN-13, RF-25** |
+| **Cierre de Turno** | Botón genérico "Consolidar turno" sin tabla ni diferencias por etapa. | **Cierre formal del Líder:** Matriz de balance por etapa para evitar piezas perdidas, bandeja de autorizaciones y exportación CSV. | **F-12, P-35, P-43, BD-12 (Incidente A y D)** |
+| **Bandeja de Autorizaciones** | Inexistente; permisos solo en UI. | **Tabla y endpoints de autorizaciones (RN-09, RN-11, RN-14)** para reapertura de cajas y ajuste de turnos. | **BD-13, BD-14, RN-14** |
+| **Roles de Usuario** | 5 roles genéricos sin permisos en BD. | **Los 9 roles oficiales del caso** con permisos granulares y middleware `requirePermission`. | **P-37, BD-14, RNF-01b** |
+| **Aviso Mantenimiento** | Inexistente. | **Parámetro del sistema** (`SISTEMA_MODO_MANTENIMIENTO`) con aviso visible en terminales. | **P-39, BD-17, RNF-07** |
+
+---
+
+## 2. Solución a los 4 Incidentes Críticos de Planta
+
+El documento de auditoría estableció que el sistema debía demostrar la prevención de los 4 incidentes reales ocurridos en la planta Nova Sound. Todos cuentan con pruebas automatizadas en `tests/incidentes.audit.test.ts`:
+
+### 🚨 Incidente A: 87 unidades "desaparecidas" en turno
+* **Causa en versión inicial:** No se medía el inventario en proceso (WIP) entre etapas; si ensamble reportaba 100 y calidad liberaba 80, no se sabía dónde estaban las 20 restantes.
+* **Solución implementada:** Se integró la **Matriz de Balance por Etapas**:
+  $$\text{Diferencia WIP} = \text{Ensambladas} - \text{Probadas} - \text{Liberadas} - \text{Empacadas} - \text{Embarcadas}$$
+  El reporte de cierre del turno desglosa exactamente cuántas piezas quedaron en cada buffer y levanta alertas si hay discrepancias no justificadas.
+
+### 🚨 Incidente B: Caja de NS-PRO Negro contaminada con 6 piezas NS-SPORT Azul
+* **Causa en versión inicial:** La tabla `cajas` no guardaba cliente, modelo ni color; cualquier operador podía escanear cualquier serie en cualquier caja.
+* **Solución implementada:** 
+  1. La tabla `cajas` ahora almacena `id_cliente`, `id_modelo`, `id_color` y capacidad según modelo.
+  2. El servicio `cajas.service.ts` valida en tiempo real:
+     * Que la unidad coincida exactamente en `id_modelo`.
+     * Que coincida en `id_color` (a menos que el cliente explícitamente permita mezcla en `clientes.permite_mezcla_colores`).
+     * Que la unidad esté en estado **Aprobada** por Calidad.
+
+### 🚨 Incidente C: Unidades retenidas enviadas al cliente en un embarque
+* **Causa en versión inicial:** Una unidad se empacaba cuando estaba aprobada, luego Calidad abría una investigación y la ponía "En retención", pero el módulo de Embarques no revalidaba el estado al salir el camión.
+* **Solución implementada:** El endpoint `PATCH /api/embarques/:id/despachar` ejecuta una consulta transaccional que recorre todas las unidades contenidas en las cajas asignadas al embarque. Si tan solo **una unidad** tiene estado distinto a `Aprobada`, **la transacción se aborta con error HTTP 400 y mensaje explícito de bloqueo por calidad**.
+
+### 🚨 Incidente D: Cierre de turno tarde y ajustes no autorizados
+* **Causa en versión inicial:** El cierre dependía de hojas de cálculo externas y las correcciones de piezas se hacían directamente en base de datos sin bitácora ni aprobación.
+* **Solución implementada:** Creación de la entidad `cierres_turno` y el flujo de `solicitudes_autorizacion`. Si un líder necesita ajustar un número después de cerrado el turno, genera una solicitud que debe ser aprobada por el Gerente de Producción (RN-11).
+
+---
+
+## 3. Cambios en Base de Datos y Modelo Relacional (BD-01 a BD-20)
+
+Los nuevos scripts se ubican en la carpeta [`database/`](./database/):
+
+1. **`schema_completo_actualizado.sql` (Esquema SSOT en PostgreSQL):**
+   * **`cajas`:** Agregadas columnas `id_cliente`, `id_modelo`, `id_color`, `id_usuario_cerro`, `id_embarque_asignado`.
+   * **`detalle_caja`:** Historial de entrada, slots y retiro de piezas con fecha y motivo (BD-07).
+   * **`prueba_funcional`:** Se desacopló la serie obligatoria. Ahora guarda las 4 validaciones booleanas y se vincula con la unidad únicamente si aprueba (BD-03, BD-04).
+   * **`defectos_ensamble` y `defectos_funcionales`:** Ligados mediante llaves foráneas formales a `catalogo_defectos` (BD-05, BD-06).
+   * **`cierres_turno`:** Nueva tabla para formalizar el corte de turno del Líder con métricas reales vs objetivo (BD-12).
+   * **`solicitudes_autorizacion`:** Nueva tabla para gestionar reapertura de cajas y ajustes de cierres (BD-13).
+   * **`permisos` y `rol_permisos`:** Matriz RBAC para los 9 roles oficiales (BD-14).
+   * **`parametros_sistema`:** Soporte para tipos de dato y clave `SISTEMA_MODO_MANTENIMIENTO` (BD-17).
+   * **`clientes`:** Columnas `permite_mezcla_colores`, `requiere_etiqueta`, `requisitos_empaque` (BD-18).
+2. **`INSERTS_CATALOGOS_OFICIALES.sql`:**
+   * Carga de los **9 roles oficiales** con descripciones ISO-9001.
+   * Carga de **15 permisos granulares**.
+   * Carga de usuarios de prueba para cada rol con contraseñas hasheadas en **bcrypt real** (contraseña: `123456`).
+   * Catálogo unificado de defectos en las 4 categorías oficiales: *Apariencia*, *Funcional*, *Identificación* y *Empaque*.
+   * Políticas de los 4 clientes base (`SoundCorp Retail`, `MegaAudio`, `TechBeat`, `ElectroMax`).
+3. **`migracion_actualizacion.sql`:**
+   * Script DDL idempotente que aplica `ALTER TABLE` y `CREATE TABLE IF NOT EXISTS` sobre bases de datos existentes en Neon sin perder información previa.
+
+---
+
+## 4. Cambios en el Backend (API REST y Lógica de Negocio)
+
+La arquitectura del backend en [`nova-sound-ui-BACKEND/`](./nova-sound-ui-BACKEND/) se robusteció con servicios y repositorios desacoplados:
+
+### Nuevos Controladores y Rutas (`src/routes/index.ts`)
+* **`/api/ensamble`:**
+  * `POST /conteo`: Registro de cantidad producida sin serie (F-03).
+  * `POST /defecto`: Registro de scrap o falla mecánica con catálogo.
+* **`/api/pruebas`:**
+  * `POST /evaluar`: Evaluación de checks (Encendido, Audio, Carga, Bluetooth) y generación de serie `NS-2026-XXXX` al aprobar (F-04).
+* **`/api/ordenes`:**
+  * `GET /`: Listado de órdenes y avance.
+  * `POST /`: Creación manual de orden.
+  * `POST /importar`: Carga masiva de pedidos por CSV.
+  * `PATCH /:id/asignar-linea`: Asignación a línea L1/L2/L3 con fecha y usuario.
+* **`/api/cajas`:**
+  * `POST /`: Apertura pidiendo cliente, modelo y color.
+  * `POST /empacar-serie`: Empaque validando modelo, color y dictamen Aprobado (Incidente B).
+  * `PATCH /:id/cerrar`: Sellado definitivo de la caja.
+  * `POST /:id/retirar-unidad`: Retiro de pieza con motivo de auditoría.
+* **`/api/embarques`:**
+  * `POST /asignar-caja`: Asigna únicamente cajas cerradas del cliente del pedido.
+  * `PATCH /:id/despachar`: Revalidación de calidad en tiempo real y salida de almacén (Incidente C).
+* **`/api/turnos`:**
+  * `GET /metricas`: Matriz de balance y cálculo de diferencias en piso (Incidente A).
+  * `POST /cierre`: Consolidación formal del Líder de Línea.
+  * `GET /cierres/exportar`: Descarga de reporte en formato CSV.
+  * `PATCH /cierres/:id/corregir`: Corrección sujeta a autorización gerencial.
+* **`/api/autorizaciones`:**
+  * `GET /`, `POST /solicitar`, `PATCH /:id/resolver`: Bandeja de gobernanza para supervisores y gerentes.
+* **`/api/health`:**
+  * Retorna estado operativo o aviso si el modo mantenimiento está activado (RNF-07).
+
+### Middleware de Seguridad (`src/middlewares/auth.middleware.ts`)
+* Función `requirePermission(codigoPermiso)` que consulta la matriz `rol_permisos` en PostgreSQL y bloquea acciones no autorizadas con código HTTP 403 Forbidden.
+
+---
+
+## 5. Cambios en el Frontend (HMI / Estaciones de Trabajo)
+
+En [`nova-sound-ui-FRONTEND/`](./nova-sound-ui-FRONTEND/) se sincronizaron las 11 estaciones operativas con el backend:
+
+1. **`[00]` Telemetría:** Monitor de líneas L1, L2, L3, balance de piso y aviso de mantenimiento.
+2. **`[01]` Órdenes de Producción:** Formulario de alta, importador CSV y asignador de líneas con usuario y fecha.
+3. **`[02]` 1. Ensamble:** Selector dinámico de orden activa (modelo y color heredados), conteo por lotes sin serie y registro de defectos.
+4. **`[03]` 2. Prueba Funcional:** Banco de pruebas acústico/eléctrico con los 4 checks. Emisión y bautizo de la serie `NS-2026-XXXX`.
+5. **`[04]` 3. Calidad:** Inspección con los 4 estados oficiales (Aprobada, En retrabajo, En retención, Scrap), severidad y re-inspección tras retrabajo.
+6. **`[05]` 4. Empaque:** Apertura de cajas por cliente/modelo/color, medidor de capacidad, botones Cerrar/Reabrir/Retirar y prevención del Incidente B.
+7. **`[06]` 5. Embarques:** Manifiesto de remisión con chofer, placas, transportista oficial y bloqueo por Incidente C.
+8. **`[360]` Trazabilidad 360°:** Consulta por número de serie con historial completo de movimientos.
+9. **`[07]` Cierre & Autorizaciones:** Cierre formal del Líder, matriz de balance de piezas y bandeja de resolución de autorizaciones.
+10. **`[08]` Reportes & Pareto:** Pareto de defectos en 4 categorías, retención segregada y exportador a CSV.
+11. **`[SYS]` Configuración:** Gestión de los 9 roles, parámetros del sistema y bitácora de auditoría.
+
+---
+
+## 6. Estructura Actualizada del Repositorio
 
 ```text
-WEB/
-├── database/                          # Scripts DDL y semillas SQL
-│   ├── Tablas.sql                     # Creación de tablas, llaves foráneas y constraints
-│   └── INSERTS_NOVA_SOUND.txt         # Datos maestros (catálogos, 50 usuarios, órdenes, etc.)
+nova_sound_web/
+├── database/                                  # Scripts SQL y migraciones
+│   ├── Tablas.sql                             # DDL base original
+│   ├── schema_completo_actualizado.sql        # DDL completo con todas las correcciones
+│   ├── migracion_actualizacion.sql            # Script para actualizar bases de datos existentes
+│   ├── INSERTS_CATALOGOS_OFICIALES.sql        # Semillas oficiales (9 roles, permisos, defectos)
+│   └── INSERTS_NOVA_SOUND.txt                 # Datos maestros iniciales
 │
-├── nova-sound-ui-BACKEND/             # API REST (Node.js + Express + TypeScript)
+├── nova-sound-ui-BACKEND/                     # API REST (Node.js + Express + TypeScript)
 │   ├── src/
-│   │   ├── config/db.ts               # Pool de conexiones a PostgreSQL
-│   │   ├── controllers/               # Controladores HTTP y validaciones con Zod
-│   │   ├── services/                  # Reglas de negocio e ISO-9001
-│   │   ├── repositories/              # Consultas SQL (Data Access Layer)
-│   │   ├── routes/                    # Endpoints REST montados en /api
-│   │   ├── types/                     # Interfaces TypeScript sincronizadas con la BD
-│   │   └── server.ts                  # Punto de entrada del servidor (puerto 4000)
-│   ├── tests/                         # Pruebas unitarias de calidad con Vitest
-│   ├── .env.example                   # Plantilla de variables de entorno
+│   │   ├── config/db.ts                       # Conexión a PostgreSQL (Neon / Local)
+│   │   ├── controllers/                       # Controladores HTTP
+│   │   │   ├── ensamble.controller.ts         # Conteo y defectos de línea
+│   │   │   ├── pruebas.controller.ts          # Evaluación funcional y emisión de series
+│   │   │   ├── operaciones.controller.ts      # Cajas, órdenes, embarques, turnos, autorizaciones
+│   │   │   ├── unidades.controller.ts         # Trazabilidad y calidad
+│   │   │   └── usuarios.controller.ts         # Login y usuarios
+│   │   ├── services/                          # Lógica de negocio e ISO-9001
+│   │   │   ├── ensamble.service.ts
+│   │   │   ├── pruebas.service.ts
+│   │   │   ├── cajas.service.ts
+│   │   │   ├── embarques.service.ts
+│   │   │   ├── cierres-turno.service.ts
+│   │   │   └── autorizaciones.service.ts
+│   │   ├── repositories/                      # Consultas SQL (Data Access Layer)
+│   │   ├── middlewares/
+│   │   │   └── auth.middleware.ts             # Control de acceso por permisos (RBAC)
+│   │   ├── routes/index.ts                    # Enrutador central /api
+│   │   └── server.ts                          # Entrada del servidor (puerto 4000)
+│   ├── tests/                                 # Pruebas automatizadas (Vitest)
+│   │   ├── incidentes.audit.test.ts           # Verificación de INC-A, INC-B, INC-C, INC-D
+│   │   ├── pruebas_funcionales.test.ts        # Verificación del nacimiento de serie
+│   │   └── integracion_completa_bd.test.ts    # Flujo end-to-end de base de datos
 │   └── package.json
 │
-├── nova-sound-ui-FRONTEND/            # Interfaz HMI / MES (React 19 + TypeScript + Vite)
+├── nova-sound-ui-FRONTEND/                    # HMI / MES Industrial (React 19 + TypeScript + Vite)
 │   ├── src/
-│   │   ├── Pages/                     # Vistas principales (Login, Dashboard)
-│   │   ├── components/                # Estaciones de manufactura:
-│   │   │   ├── EnsambleStation.tsx    # Registro y serialización
-│   │   │   ├── CalidadStation.tsx     # Pruebas funcionales y dictamen
-│   │   │   ├── EmpaqueStation.tsx     # Llenado y sellado de cajas
-│   │   │   ├── EmbarquesStation.tsx   # Manifiestos de remisión y salida
-│   │   │   ├── ReportesStation.tsx    # KPIs (FPY, Pareto de fallas, Scrap)
-│   │   │   ├── ConfiguracionStation.tsx # Gestión de usuarios, parámetros y respaldos
-│   │   │   └── common/Icon.tsx        # Componente oficial Google Material Symbols
-│   │   ├── context/PlantaContext.tsx  # Estado global y sincronización con el backend
-│   │   └── types/database.ts          # Tipos compartidos
+│   │   ├── Pages/Areas/                       # Las 11 estaciones de manufactura
+│   │   ├── components/                        # Componentes de estación y Topbar
+│   │   ├── context/PlantaContext.tsx          # Estado reactivo y conexión a la API
+│   │   ├── types/database.ts                  # Interfaces sincronizadas con PostgreSQL
+│   │   └── index.css                          # Sistema de diseño industrial
 │   └── package.json
 │
-├── .gitignore                         # Exclusión de node_modules, .env y compilados
-└── README.md                          # Documentación del proyecto
+├── Nova Sound – Registro de observaciones de revisión.pdf # Documento de auditoría base
+└── README.md                                  # Este documento
 ```
 
 ---
 
-## Requisitos Previos
+## 7. Guía de Instalación y Puesta en Marcha
 
-Antes de comenzar, asegúrate de tener instalado en tu computadora:
+### Requisitos Previos
+* **Node.js** v18+ (recomendado Node.js v20+ LTS).
+* **npm** v9+.
+* Instancia de **PostgreSQL** en [Neon.tech](https://neon.tech/) o local.
 
-* **[Node.js](https://nodejs.org/)** versión **18.0.0** o superior (recomendado v20+ LTS).
-* **npm** (viene instalado automáticamente con Node.js).
-* **[Git](https://git-scm.com/)** instalado en tu sistema.
-* Una cuenta gratuita en **[Neon.tech](https://neon.tech/)** (o bien PostgreSQL local instalado con pgAdmin).
+### Paso 1: Configurar la Base de Datos
+Ejecuta en tu base de datos PostgreSQL los scripts en este orden:
+1. `database/schema_completo_actualizado.sql` (o `migracion_actualizacion.sql` si ya tenías tablas previas).
+2. `database/INSERTS_CATALOGOS_OFICIALES.sql`.
 
----
-
-## Guía de Instalación y Puesta en Marcha
-
-### Paso 1: Clonar el Repositorio
-
-Abre tu terminal y clona el proyecto en tu máquina:
-
-```bash
-git clone https://github.com/TU_USUARIO/TU_REPOSITORIO.git
-cd TU_REPOSITORIO
-```
-
----
-
-### Paso 2: Base de Datos (Neon PostgreSQL)
-
-Puedes usar una base de datos en la nube gratuita con **Neon** (altamente recomendado para que todo el equipo comparta los mismos datos) o una instancia local:
-
-1. Inicia sesión en **[Neon.tech](https://neon.tech/)** y crea un nuevo proyecto llamado `nova-sound`.
-2. Ve a la pestaña **SQL Editor** en Neon.
-3. Abre el archivo [`database/Tablas.sql`](database/Tablas.sql), copia todo su contenido, pégalo en el SQL Editor y dale a **Run**. *(Esto crea las 18 tablas maestras)*.
-4. Abre el archivo [`database/INSERTS_NOVA_SOUND.txt`](database/INSERTS_NOVA_SOUND.txt), copia todo su contenido, pégalo en el SQL Editor y dale a **Run**. *(Esto inserta catálogos, líneas, 50 usuarios, órdenes y piezas iniciales)*.
-5. Ve a la sección **Dashboard** de Neon y copia tu **Connection String** (`postgresql://usuario:password@ep-xxxx.neon.tech/neondb?sslmode=require`).
-
----
-
-### Paso 3: Configurar y Correr el Backend
-
-Abre una terminal y entra en la carpeta del backend:
-
+### Paso 2: Iniciar el Backend
 ```bash
 cd nova-sound-ui-BACKEND
+npm install
+cp .env.example .env
+# Configura DATABASE_URL en tu archivo .env con tu cadena de conexión
+npm run dev
 ```
+El servidor arrancará en: `http://localhost:4000/api`
 
-1. **Instalar dependencias:**
-   ```bash
-   npm install
-   ```
-
-2. **Configurar variables de entorno:**
-   Copia el archivo `.env.example` para crear tu `.env`:
-   * En Windows (PowerShell):
-     ```powershell
-     Copy-Item .env.example .env
-     ```
-   * En Linux/Mac/Git Bash:
-     ```bash
-     cp .env.example .env
-     ```
-
-3. **Editar el archivo `.env`:**
-   Abre el archivo `.env` en tu editor de código y coloca la URL de conexión de tu base de datos de Neon:
-   ```env
-   PORT=4000
-   NODE_ENV=development
-   DATABASE_URL=postgresql://usuario:password@ep-xxxx.us-east-2.aws.neon.tech/neondb?sslmode=require
-   CORS_ORIGIN=http://localhost:5173
-   ```
-
-4. **Iniciar el servidor en modo desarrollo:**
-   ```bash
-   npm run dev
-   ```
-
-   El backend estará escuchando en `http://localhost:4000`. Puedes verificar que funciona abriendo en tu navegador:
-   👉 `http://localhost:4000/api/health` — Debería responder `{ "status": "ok", ... }`.
-
-5. *(Opcional)* **Ejecutar pruebas unitarias de calidad:**
-   ```bash
-   npm test
-   ```
-
----
-
-### Paso 4: Configurar y Correr el Frontend
-
-**Abre una SEGUNDA terminal** (mantén la del backend corriendo) y sitúate en la carpeta del frontend:
-
+### Paso 3: Iniciar el Frontend
 ```bash
-cd nova-sound-ui-FRONTEND
+cd ../nova-sound-ui-FRONTEND
+npm install
+npm run dev
 ```
-
-1. **Instalar dependencias:**
-   ```bash
-   npm install
-   ```
-
-2. **Iniciar la aplicación:**
-   ```bash
-   npm run dev
-   ```
-
-3. Abre tu navegador en:
-   👉 **`http://localhost:5173`**
-
-¡Listo! Ya verás la pantalla de inicio de sesión del sistema industrial.
+La interfaz estará lista en: `http://localhost:5173/`
 
 ---
 
-## Credenciales de Acceso y Roles
+## 8. Ejecución de Pruebas Automatizadas (Vitest)
 
-El sistema cuenta con un catálogo de **50 usuarios reales** en base de datos divididos en 5 roles de planta.
-
-Para facilitar las pruebas al equipo, en la pantalla de **Login** hay una barra inferior con **Botones de Acceso Rápido (1 clic)** que rellenan automáticamente los datos.
-
-Si deseas ingresar manualmente, puedes usar cualquiera de estas credenciales:
-
-| Rol | Usuario (`usuario_login`) | Nómina | Contraseña Demo |
-| :--- | :--- | :--- | :--- |
-| **Administrador** | `admin1` | `EMP-001` | `123456` *(o `hash680`)* |
-| **Inspector de Calidad** | `inspector1` | `EMP-011` | `123456` *(o `hash123`)* |
-| **Operador de Ensamble** | `operador1` | `EMP-021` | `123456` *(o `hash456`)* |
-| **Supervisor de Línea** | `supervisor1` | `EMP-031` | `123456` *(o `hash789`)* |
-| **Gerente de Planta** | `gerente1` | `EMP-041` | `123456` *(o `hash024`)* |
-
-> 💡 **Nota:** En el Login puedes seleccionar la **Línea de Producción** (L1, L2, L3) y el **Turno** (Mañana, Tarde, Noche). La sesión se mantiene guardada localmente hasta que hagas clic en **"Cerrar Sesión"**.
-
----
-
-## Recorrido del Flujo Operativo (Estaciones)
-
-Para probar el ciclo completo de manufactura de una bocina en el sistema:
-
-```mermaid
-flowchart LR
-    A["1. Login<br>(Rol + Línea + Turno)"] --> B["2. Ensamble<br>(Generar Serie)"]
-    B --> C["3. Calidad<br>(Checklist ISO-9001)"]
-    C --> D["4. Empaque<br>(Llenar y Sellar Caja)"]
-    D --> E["5. Embarques<br>(Remisión y Salida)"]
-    C -. Scrap .-> F["Desecho / Scrap"]
-    C -. Retrabajo .-> B
-    E --> G["6. Reportes & KPIs<br>(FPY, Pareto, Avance)"]
-```
-
-1. **Estación de Ensamble (`/ensamble`):**
-   * Selecciona una Orden de Producción activa.
-   * Haz clic en **"Generar Número de Serie"** (ej. `UN0055`) y presiona **"Registrar Ensamble de Pieza"**. La pieza ingresa a planta con estado de calidad *Pendiente*.
-
-2. **Estación de Calidad (`/calidad`):**
-   * En la parte superior verás la fila de piezas pendientes de inspección.
-   * Haz clic sobre tu número de serie recién ensamblado para cargarlo al formulario.
-   * Realiza el checklist de pruebas funcionales (Encendido, Audio, Carga USB-C, Bluetooth).
-   * Dictamina la pieza como **1. APROBADA** (o Retrabajo / Retención / Scrap).
-   * Al guardar, se genera el registro inmutable en `historial_unidades`.
-
-3. **Estación de Empaque (`/empaque`):**
-   * Selecciona una caja abierta o haz clic en **"Aperturar Nueva Caja"**.
-   * Solo las unidades con dictamen **Aprobada** pueden ingresar. Escanea o selecciona la pieza para meterla a la caja.
-   * Una vez alcanzada la capacidad deseada, presiona **"Cerrar y Sellar Caja"**. La caja queda lista para despacho.
-
-4. **Estación de Embarques (`/embarques`):**
-   * Selecciona una orden de embarque activa o programa una nueva asignando cliente y transportista.
-   * Asigna la caja sellada al embarque.
-   * Haz clic en **"Confirmar Salida de Transporte"** para despachar la remisión.
-
-5. **Reportes y KPIs (`/reportes`):**
-   * Observa en vivo el cálculo de métricas: piezas ensambladas contra la meta, **First Pass Yield (FPY)**, tasa de scrap, distribución y el **Pareto de fallas** más frecuentes.
-
-6. **Configuración (`/configuracion`):**
-   * Permite dar de alta nuevos usuarios en PostgreSQL, activar/desactivar accesos, ajustar parámetros del sistema y auditar la bitácora de eventos.
-
----
-
-## Pruebas Automatizadas
-
-El backend incluye una suite de pruebas con **Vitest** y **Supertest** orientadas a validar las reglas de negocio de la materia:
+Para verificar que todos los requerimientos y los 4 incidentes están 100% resueltos, ejecuta en la carpeta del backend:
 
 ```bash
 cd nova-sound-ui-BACKEND
 npm test
 ```
 
-### Casos de prueba cubiertos:
-* **Registro exitoso de unidades serializadas:** Generación correcta del registro en base de datos.
-* **Unicidad de serie (Prevención de duplicados):** El sistema rechaza con código `409 Conflict` si se intenta registrar una serie repetida.
-* **Protocolo de Calidad ISO-9001:** Validación estricta que impide dictaminar una pieza como `Aprobada` si alguna prueba funcional eléctrica o acústica fue reprobada.
-* **Trazabilidad de Historial:** Comprobación de que cada dictamen queda asentado en `historial_unidades` con usuario, fecha y diagnóstico.
+Salida esperada:
+* `tests/incidentes.audit.test.ts`: Validación de prevención para Incidente A, B, C y D (**PASS**).
+* `tests/pruebas_funcionales.test.ts`: Verificación de emisión de serie y rechazo de fallas (**PASS**).
+* `tests/unidades.service.test.ts`: Flujo de calidad y estados (**PASS**).
 
 ---
+
+## 9. Catálogo Oficial de Credenciales y los 9 Roles
+
+Todos los usuarios oficiales están precargados con la contraseña: **`123456`**
+
+| Nómina | Nombre Completo | Login | Rol Oficial (P-37) | Módulos con Acceso |
+| :--- | :--- | :--- | :--- | :--- |
+| `NS-OP-001` | Carlos Hernández | `operador_ns` | 1. Operador de Ensamble | Ensamble, Pruebas Funcionales |
+| `NS-LD-001` | Roberto Mendoza | `lider_ns` | 2. Líder de Línea | Ensamble, Pruebas, Órdenes, Cierre de Turno |
+| `NS-CA-001` | Juan Pérez | `calidad_ns` | 3. Inspector de Calidad | Calidad, Pruebas Funcionales, Trazabilidad |
+| `NS-AL-001` | Lucía Gómez | `almacen_ns` | 4. Almacén / Empaque | Empaque, Embarques, Trazabilidad |
+| `NS-SA-001` | Fernanda Gómez | `sup_almacen_ns` | 5. Supervisor de Almacén | Empaque, Embarques, Autorización de Reaperturas |
+| `NS-SP-001` | Miguel Ángel Vega | `subgerente_ns` | 6. Subgerente de Producción | Órdenes, Balance de Planta, Asignación de Líneas |
+| `NS-GP-001` | Eduardo Díaz | `gerente_prod_ns` | 7. Gerente de Producción | Órdenes, Cierres de Turno, Autorización de Ajustes |
+| `NS-PL-001` | Elena Torres | `gerente_planta_ns` | 8. Gerente de Planta | Tableros Ejecutivos, Reportes, Embarques |
+| `NS-AD-001` | Marcela Juárez | `admin_ns` | 9. Administrador del Sistema | Acceso Total, Parámetros, Modo Mantenimiento, DB |
+
+---
+
+*Proyecto desarrollado para la materia de Calidad y Pruebas de Software — Caso Nova Sound MES.*

@@ -1,461 +1,199 @@
 import React, { useState } from 'react';
-import { usePlanta } from '../context/PlantaContext';
-import Icon from '../components/common/Icon';
+import { usePlanta, USUARIOS_OFICIALES, NOMBRES_ROLES, CATALOGO_LINEAS, CATALOGO_TURNOS } from '../context/PlantaContext';
 
-interface CredencialPrueba {
-  rol: string;
-  login: string;
-  pass: string;
-  nombre: string;
-  nomina: string;
-  badgeClass: string;
-}
-
-const ACCESOS_RAPIDOS: CredencialPrueba[] = [
-  { rol: 'Administrador', login: 'admin1', pass: 'hash680', nombre: 'Marcela Juárez', nomina: 'EMP-005', badgeClass: 'badge-ok' },
-  { rol: 'Inspector Calidad', login: 'inspector1', pass: 'hash123', nombre: 'Juan Pérez', nomina: 'EMP-001', badgeClass: 'badge-info' },
-  { rol: 'Operador Línea', login: 'operador1', pass: 'hash456', nombre: 'Carlos Hernández', nomina: 'EMP-002', badgeClass: 'badge-warn' },
-  { rol: 'Supervisor', login: 'supervisor1', pass: 'hash789', nombre: 'Fernanda Gómez', nomina: 'EMP-003', badgeClass: 'badge-neutral' },
-  { rol: 'Gerente Planta', login: 'gerente1', pass: 'hash024', nombre: 'Eduardo Díaz', nomina: 'EMP-004', badgeClass: 'badge-danger' },
-];
-
-export const Login: React.FC = () => {
+export default function Login() {
   const { iniciarSesion } = usePlanta();
 
-  const [loginInput, setLoginInput] = useState('');
-  const [contrasenaInput, setContrasenaInput] = useState('');
+  const [usuarioLogin, setUsuarioLogin] = useState<string>('admin_ns');
+  const [contrasena, setContrasena] = useState<string>('123456');
   const [lineaId, setLineaId] = useState<number>(1);
   const [turnoId, setTurnoId] = useState<number>(1);
-  const [mostrarPassword, setMostrarPassword] = useState(false);
-  const [cargando, setCargando] = useState(false);
-  const [errorMensaje, setErrorMensaje] = useState<string | null>(null);
+  const [cargando, setCargando] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginInput.trim() || !contrasenaInput.trim()) {
-      setErrorMensaje('Ingrese su nómina o nombre de usuario y contraseña.');
-      return;
-    }
-
     setCargando(true);
-    setErrorMensaje(null);
+    setErrorMsg(null);
 
-    const res = await iniciarSesion(loginInput.trim(), contrasenaInput.trim(), lineaId, turnoId);
-    setCargando(false);
-
+    const res = await iniciarSesion(usuarioLogin, contrasena, lineaId, turnoId);
     if (!res.ok) {
-      setErrorMensaje(res.error || 'Credenciales no válidas.');
+      setErrorMsg(res.error || 'Credenciales no válidas.');
     }
+    setCargando(false);
   };
 
-  const aplicarAccesoRapido = (item: CredencialPrueba) => {
-    setLoginInput(item.login);
-    setContrasenaInput(item.pass);
-    setErrorMensaje(null);
+  const handleQuickLogin = (login: string) => {
+    setUsuarioLogin(login);
+    setContrasena('123456');
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#090d14',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px 16px',
-        position: 'relative',
-      }}
-    >
-      {/* Fondo técnico con patrón de rejilla industrial sutil */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            'radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 60%), linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)',
-          backgroundSize: '100% 100%, 32px 32px, 32px 32px',
-          pointerEvents: 'none',
-        }}
-      />
+    <div className="login-screen tex-grid">
+      {/* FRANJA DE ADVERTENCIA LATERAL ENDFIELD */}
+      <div className="login-deco-stripe-left tex-warn-stripes" />
+      <div className="login-deco-accent-line" />
 
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '480px',
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        {/* Panel del Login */}
-        <div className="panel" style={{ boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)' }}>
-          {/* Cabecera Técnica de Terminal */}
-          <div
-            className="panel-header"
-            style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid #1f2c3f',
-              backgroundColor: '#0e1520',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '10px',
-                  height: '10px',
-                  backgroundColor: '#10b981',
-                  borderRadius: '1px',
-                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
-                }}
-              />
-              <div>
-                <h1
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    letterSpacing: '1px',
-                    color: '#f8fafc',
-                    margin: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  NOVA SOUND
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      color: '#38bdf8',
-                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                      padding: '1px 6px',
-                      border: '1px solid rgba(56, 189, 248, 0.3)',
-                      borderRadius: '2px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    HMI / MES
-                  </span>
-                </h1>
-                <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
-                  TERMINAL DE ACCESO A PISO · AUTENTICACIÓN NEON
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-              <Icon name="cloud_done" size={16} />
-              <span>ONLINE</span>
-            </div>
-          </div>
-
-          <div className="panel-body" style={{ padding: '24px 20px' }}>
-            {errorMensaje && (
-              <div className="alert-banner alert-banner-error" style={{ marginBottom: '18px' }}>
-                <Icon name="error" size={18} color="#ef4444" />
-                <span style={{ flex: 1 }}>{errorMensaje}</span>
-                <button
-                  type="button"
-                  onClick={() => setErrorMensaje(null)}
-                  style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0 }}
-                >
-                  <Icon name="close" size={16} />
-                </button>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Campo: Nómina / Usuario */}
-              <div>
-                <label
-                  htmlFor="login-input"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#94a3b8',
-                    textTransform: 'uppercase',
-                    marginBottom: '6px',
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                >
-                  <Icon name="badge" size={16} color="#38bdf8" />
-                  Nómina o Usuario de Acceso:
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    id="login-input"
-                    type="text"
-                    value={loginInput}
-                    onChange={(e) => setLoginInput(e.target.value)}
-                    placeholder="Ej. EMP-005 o admin1"
-                    autoComplete="username"
-                    autoFocus
-                    style={{
-                      width: '100%',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '13px',
-                      paddingLeft: '34px',
-                    }}
-                  />
-                  <span
-                    style={{
-                      position: 'absolute',
-                      left: '10px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#475569',
-                      display: 'flex',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    <Icon name="account_circle" size={18} />
-                  </span>
-                </div>
-              </div>
-
-              {/* Campo: Contraseña / PIN */}
-              <div>
-                <label
-                  htmlFor="pass-input"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#94a3b8',
-                    textTransform: 'uppercase',
-                    marginBottom: '6px',
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                >
-                  <Icon name="key" size={16} color="#38bdf8" />
-                  Contraseña o Hash de Operador:
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    id="pass-input"
-                    type={mostrarPassword ? 'text' : 'password'}
-                    value={contrasenaInput}
-                    onChange={(e) => setContrasenaInput(e.target.value)}
-                    placeholder="Ingrese su clave (ej. hash680 o admin1)"
-                    autoComplete="current-password"
-                    style={{
-                      width: '100%',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '13px',
-                      paddingLeft: '34px',
-                      paddingRight: '38px',
-                    }}
-                  />
-                  <span
-                    style={{
-                      position: 'absolute',
-                      left: '10px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#475569',
-                      display: 'flex',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    <Icon name="lock" size={18} />
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setMostrarPassword(!mostrarPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '8px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#64748b',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      display: 'flex',
-                    }}
-                    title={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
-                  >
-                    <Icon name={mostrarPassword ? 'visibility_off' : 'visibility'} size={18} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Selección de Línea y Turno de Piso */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label
-                    htmlFor="linea-select"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#94a3b8',
-                      textTransform: 'uppercase',
-                      marginBottom: '6px',
-                      fontFamily: 'var(--font-mono)',
-                    }}
-                  >
-                    <Icon name="precision_manufacturing" size={15} color="#f59e0b" />
-                    Línea Asignada:
-                  </label>
-                  <select
-                    id="linea-select"
-                    value={lineaId}
-                    onChange={(e) => setLineaId(Number(e.target.value))}
-                    style={{ width: '100%', fontFamily: 'var(--font-mono)' }}
-                  >
-                    <option value={1}>L1 (Mini / Pro)</option>
-                    <option value={2}>L2 (Sport / Mini)</option>
-                    <option value={3}>L3 (Pro / Max)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="turno-select"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#94a3b8',
-                      textTransform: 'uppercase',
-                      marginBottom: '6px',
-                      fontFamily: 'var(--font-mono)',
-                    }}
-                  >
-                    <Icon name="schedule" size={15} color="#38bdf8" />
-                    Turno Activo:
-                  </label>
-                  <select
-                    id="turno-select"
-                    value={turnoId}
-                    onChange={(e) => setTurnoId(Number(e.target.value))}
-                    style={{ width: '100%', fontFamily: 'var(--font-mono)' }}
-                  >
-                    <option value={1}>Mañana (06:00 - 14:00)</option>
-                    <option value={2}>Tarde (14:00 - 22:00)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Botón de Submit */}
-              <button
-                type="submit"
-                disabled={cargando}
-                className="btn btn-primary"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  letterSpacing: '0.5px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  marginTop: '8px',
-                }}
-              >
-                <Icon name={cargando ? 'sync' : 'login'} size={18} className={cargando ? 'spin' : ''} />
-                {cargando ? 'AUTENTICANDO CREDENCIALES...' : 'INICIAR SESIÓN Y ENTRAR A PISO'}
-              </button>
-            </form>
-
-            {/* Accesos Rápidos para Pruebas / Calificación Escolar */}
-            <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid #1a2535' }}>
-              <div
-                style={{
-                  fontSize: '11px',
-                  color: '#64748b',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  marginBottom: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <Icon name="touch_app" size={14} color="#38bdf8" />
-                Acceso Rápido para Pruebas y Demostración:
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {ACCESOS_RAPIDOS.map((acc) => (
-                  <button
-                    key={acc.login}
-                    type="button"
-                    onClick={() => aplicarAccesoRapido(acc)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      backgroundColor: '#121a26',
-                      border: '1px solid #1e2a3b',
-                      padding: '7px 12px',
-                      borderRadius: '2px',
-                      cursor: 'pointer',
-                      color: '#cbd5e1',
-                      fontSize: '12px',
-                      fontFamily: 'var(--font-mono)',
-                      textAlign: 'left',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#38bdf8';
-                      e.currentTarget.style.backgroundColor = '#172233';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#1e2a3b';
-                      e.currentTarget.style.backgroundColor = '#121a26';
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className={`badge ${acc.badgeClass}`} style={{ fontSize: '9px', padding: '1px 5px' }}>
-                        {acc.rol}
-                      </span>
-                      <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{acc.nombre}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '11px' }}>
-                      <code>{acc.login}</code>
-                      <Icon name="arrow_forward" size={14} />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Pie de terminal */}
+      {/* TARJETA DE ACCESO TÉCNICO */}
+      <div className="login-card-container tex-carbon">
+        {/* LOGO ENDFIELD BRAND */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.75rem' }}>
           <div
             style={{
-              padding: '10px 20px',
-              backgroundColor: '#0a0e15',
-              borderTop: '1px solid #16202e',
+              width: '3.5rem',
+              height: '3.5rem',
+              background: 'var(--accent)',
+              color: 'var(--dark-900)',
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
-              fontSize: '10px',
-              fontFamily: 'var(--font-mono)',
-              color: '#475569',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '1.4rem',
+              clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)',
+              borderLeft: '4px solid var(--dark-900)',
             }}
           >
-            <span>SISTEMA MES / SCADA V2.4</span>
-            <span>POSTGRESQL (NEON.TECH)</span>
+            NS
           </div>
+          <div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: '1.6rem',
+                letterSpacing: '-0.5px',
+                color: '#fff',
+                lineHeight: 1,
+              }}
+            >
+              NOVA SOUND
+            </h1>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.65rem',
+                color: 'var(--accent)',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                marginTop: '4px',
+              }}
+            >
+              CONTROL MES // SCADA INDUSTRIAL
+            </div>
+          </div>
+        </div>
+
+        {errorMsg && (
+          <div
+            style={{
+              padding: '0.75rem 1rem',
+              background: 'var(--danger-bg)',
+              color: 'var(--danger)',
+              border: '1px solid var(--danger-border)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              marginBottom: '1rem',
+            }}
+          >
+            [AUTH_FAIL] {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="form-group">
+            <label className="form-label">USUARIO / CLAVE OPERATIVA</label>
+            <input
+              type="text"
+              required
+              className="form-input"
+              value={usuarioLogin}
+              onChange={(e) => setUsuarioLogin(e.target.value)}
+              placeholder="Ej. admin_ns, operador_ns"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">PIN / CONTRASEÑA</label>
+            <input
+              type="password"
+              required
+              className="form-input"
+              value={contrasena}
+              onChange={(e) => setContrasena(e.target.value)}
+              placeholder="123456"
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div className="form-group">
+              <label className="form-label">LÍNEA INICIAL</label>
+              <select className="form-select" value={lineaId} onChange={(e) => setLineaId(Number(e.target.value))}>
+                {CATALOGO_LINEAS.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.nombre_linea} (Activa)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">TURNO DE PLANTA</label>
+              <select className="form-select" value={turnoId} onChange={(e) => setTurnoId(Number(e.target.value))}>
+                {CATALOGO_TURNOS.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nombre_turno}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={cargando}
+            className="btn btn-yellow"
+            style={{ width: '100%', height: '3.2rem', marginTop: '0.5rem', fontSize: '0.9rem' }}
+          >
+            {cargando ? 'AUTENTICANDO TERMINAL...' : 'INGRESAR A TERMINAL SCADA'}
+          </button>
+        </form>
+
+        {/* ACCESOS RÁPIDOS A LOS 9 ROLES OFICIALES PARA PRUEBAS (P-02 / P-37) */}
+        <div style={{ marginTop: '1.75rem', borderTop: '1px solid var(--dark-600)', paddingTop: '1rem' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--gray-300)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+            ACCESO RÁPIDO POR ROL (SIMULACIÓN DE PRUEBAS):
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
+            {USUARIOS_OFICIALES.map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => handleQuickLogin(u.usuario_login)}
+                className="btn btn-dark"
+                style={{
+                  height: '2rem',
+                  padding: '0 0.4rem',
+                  fontSize: '0.65rem',
+                  textAlign: 'left',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  borderColor: usuarioLogin === u.usuario_login ? 'var(--accent)' : undefined,
+                  color: usuarioLogin === u.usuario_login ? 'var(--accent)' : undefined,
+                }}
+                title={`${NOMBRES_ROLES[u.id_rol]} - ${u.nombre_completo}`}
+              >
+                R{u.id_rol}: {u.usuario_login}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginTop: '1.25rem', fontSize: '0.65rem', color: 'var(--gray-400)', fontFamily: 'var(--font-mono)', textAlign: 'center' }}>
+          NOVA SOUND MES V2.4 // HMI SYSTEM ARCHITECTURE // ENDFIELD DESIGN
         </div>
       </div>
     </div>
   );
-};
-
-export default Login;
+}

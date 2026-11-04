@@ -1,544 +1,399 @@
-import React, { useState, useEffect } from 'react';
-import { usePlanta, CATALOGO_CAJAS } from '../context/PlantaContext';
-import Icon from './common/Icon';
+import React, { useState } from 'react';
+import {
+  usePlanta,
+  CATALOGO_CLIENTES,
+  CATALOGO_TRANSPORTISTAS,
+} from '../context/PlantaContext';
 
-interface TransportistaItem {
-  id: number;
-  nombre: string;
-  rfc: string;
-  telefono: string;
-  activo: boolean;
-}
-
-interface ClienteItem {
-  id: number;
-  nombre_cliente: string;
-  tipo_cliente: string;
-}
-
-const TRANSPORTISTAS_CATALOGO: TransportistaItem[] = [
-  { id: 1, nombre: 'Transportes Castores S.A.', rfc: 'CAS980214XX1', telefono: '8441234560', activo: true },
-  { id: 2, nombre: 'Logística Express Norte', rfc: 'LEN050820XX2', telefono: '8441234561', activo: true },
-  { id: 3, nombre: 'Juan Pérez (Flete Directo)', rfc: 'PERJ800101XX3', telefono: '8441234562', activo: true },
-  { id: 4, nombre: 'Transportes Rápidos Monterrey', rfc: 'TRM120305XX4', telefono: '8441234563', activo: true },
-];
-
-const CLIENTES_CATALOGO: ClienteItem[] = [
-  { id: 1, nombre_cliente: 'AudioMax', tipo_cliente: 'Cadena Comercial' },
-  { id: 2, nombre_cliente: 'SonidoPlus', tipo_cliente: 'Distribuidor' },
-  { id: 3, nombre_cliente: 'ElectroWorld', tipo_cliente: 'Cadena Comercial' },
-  { id: 4, nombre_cliente: 'MegaSound', tipo_cliente: 'Distribuidor' },
-];
-
-export const EmbarquesStation: React.FC = () => {
+export default function EmbarquesStation() {
   const {
-    cajas,
     embarques,
-    historialEmbarque,
+    cajas,
+    cajasAsignadasEmbarque,
     crearEmbarque,
-    asignarCajaAEmbarque,
-    retirarCajaDeEmbarque,
+    asignarCajaEmbarque,
+    retirarCajaEmbarque,
     despacharEmbarque,
-    unidades,
   } = usePlanta();
 
-  const [embarqueActivoId, setEmbarqueActivoId] = useState<number>(1);
+  const [embarqueSeleccionadoId, setEmbarqueSeleccionadoId] = useState<number>(embarques[0]?.id || 1);
+  const [modalNuevo, setModalNuevo] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (embarques.length > 0 && !embarques.some((e) => e.id === embarqueActivoId)) {
-      setEmbarqueActivoId(embarques[0].id);
-    }
-  }, [embarques, embarqueActivoId]);
-  const [cajaParaAsignarId, setCajaParaAsignarId] = useState<number>(0);
+  // Formulario nuevo embarque
+  const [pedido, setPedido] = useState<string>('PED-2026-001');
+  const [idCliente, setIdCliente] = useState<number>(CATALOGO_CLIENTES[0].id);
+  const [idTransportista, setIdTransportista] = useState<number>(CATALOGO_TRANSPORTISTAS[0].id);
+  const [chofer, setChofer] = useState<string>('Ramiro Valdés');
+  const [placas, setPlacas] = useState<string>('NL-884-TX');
+  const [fechaProg, setFechaProg] = useState<string>('2026-11-05 14:00');
+  const [obs, setObs] = useState<string>('Embarque prioritario con sello de seguridad');
 
-  const [mostrarNuevoEmbarque, setMostrarNuevoEmbarque] = useState(false);
-  const [nuevoClienteId, setNuevoClienteId] = useState<number>(1);
-  const [nuevoTransportistaId, setNuevoTransportistaId] = useState<number>(1);
-  const [nuevaFechaProg, setNuevaFechaProg] = useState<string>('2026-09-26');
-  const [nuevasObservaciones, setNuevasObservaciones] = useState<string>('');
+  const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'err'; texto: string } | null>(null);
 
-  const [notificacion, setNotificacion] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
+  const embarqueActual = embarques.find((e) => e.id === embarqueSeleccionadoId);
+  const cajasAsignadasIds = cajasAsignadasEmbarque[embarqueSeleccionadoId] || [];
+  const cajasAsignadas = cajas.filter((c) => cajasAsignadasIds.includes(c.id));
 
-  const embarqueActivo = embarques.find((e) => e.id === embarqueActivoId) ?? embarques[0];
-  const clienteActivo = CLIENTES_CATALOGO.find((c) => c.id === embarqueActivo?.id_cliente);
-  const transportistaActivo = TRANSPORTISTAS_CATALOGO.find((t) => t.id === embarqueActivo?.id_transportista);
+  // Cajas cerradas disponibles SOLO para el cliente del embarque seleccionado (P-27)
+  const cajasDisponibles = cajas.filter(
+    (c) =>
+      c.estado === 'Cerrada' &&
+      c.id_cliente === embarqueActual?.id_cliente &&
+      !cajasAsignadasIds.includes(c.id) &&
+      (!c.id_embarque_asignado || c.id_embarque_asignado === embarqueActual?.id)
+  );
 
-  const cajasEnEmbarque = cajas.filter((c) => c.id_embarque_asignado === embarqueActivo?.id);
-
-  const totalPiezasEnEmbarque = cajasEnEmbarque.reduce((acc, c) => {
-    const pzsEnCaja = unidades.filter((u) => u.id_caja === c.id).length;
-    return acc + pzsEnCaja;
-  }, 0);
-
-  const cajasDisponibles = cajas.filter((c) => c.id_embarque_asignado === null);
-
-  const handleAsignarCaja = (e: React.FormEvent) => {
+  const handleCrear = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!embarqueActivo) return;
-
-    const idTarget = cajaParaAsignarId || cajasDisponibles[0]?.id;
-    if (!idTarget) {
-      setNotificacion({ tipo: 'error', texto: 'No hay cajas disponibles en almacén.' });
-      return;
-    }
-
-    const res = asignarCajaAEmbarque(idTarget, embarqueActivo.id);
-    if (!res.ok) {
-      setNotificacion({ tipo: 'error', texto: res.error || 'Error al asignar caja.' });
+    const res = crearEmbarque(pedido, idCliente, idTransportista, chofer, placas, fechaProg, obs);
+    if (res.ok && res.embarque) {
+      setEmbarqueSeleccionadoId(res.embarque.id);
+      setModalNuevo(false);
+      setMensaje({ tipo: 'ok', texto: `Embarque ${res.embarque.referencia_embarque} programado en sistema` });
     } else {
-      setNotificacion({
-        tipo: 'ok',
-        texto: `✓ Caja asignada exitosamente al embarque ${embarqueActivo.referencia_embarque}.`,
-      });
+      setMensaje({ tipo: 'err', texto: res.error || 'Error al programar embarque' });
     }
   };
 
-  const handleRetirarCaja = (cajaId: number, codigoCaja: string) => {
-    if (!embarqueActivo) return;
-    const res = retirarCajaDeEmbarque(cajaId, embarqueActivo.id);
-    if (!res.ok) {
-      setNotificacion({ tipo: 'error', texto: res.error || 'Error al retirar caja.' });
+  const handleAsignarCaja = (cajaId: number) => {
+    if (!embarqueActual) return;
+    const res = asignarCajaEmbarque(embarqueActual.id, cajaId);
+    if (res.ok) {
+      setMensaje({ tipo: 'ok', texto: `Caja #${cajaId} vinculada al manifiesto del embarque` });
     } else {
-      setNotificacion({
-        tipo: 'ok',
-        texto: `Caja ${codigoCaja} retirada del embarque y devuelta a almacén.`,
-      });
+      setMensaje({ tipo: 'err', texto: res.error || 'Error al asignar caja' });
     }
   };
 
-  const handleConfirmarDespacho = () => {
-    if (!embarqueActivo) return;
-    const res = despacharEmbarque(embarqueActivo.id);
-    if (!res.ok) {
-      setNotificacion({ tipo: 'error', texto: res.error || 'Error al despachar embarque.' });
-    } else {
-      setNotificacion({
-        tipo: 'ok',
-        texto: `✓ EMBARQUE ${embarqueActivo.referencia_embarque} DESPACHADO FORMALMENTE. Estado: [EN TRÁNSITO].`,
-      });
-    }
+  const handleRetirarCaja = (cajaId: number) => {
+    if (!embarqueActual) return;
+    retirarCajaEmbarque(embarqueActual.id, cajaId);
+    setMensaje({ tipo: 'ok', texto: `Caja #${cajaId} retirada del embarque` });
   };
 
-  const handleCrearEmbarque = (e: React.FormEvent) => {
-    e.preventDefault();
-    const nuevo = crearEmbarque(nuevoClienteId, nuevoTransportistaId, nuevaFechaProg, nuevasObservaciones);
-    setEmbarqueActivoId(nuevo.id);
-    setMostrarNuevoEmbarque(false);
-    setNuevasObservaciones('');
-    setNotificacion({
-      tipo: 'ok',
-      texto: `✓ Nuevo embarque ${nuevo.referencia_embarque} registrado y listo para carga de cajas.`,
-    });
+  const handleDespachar = () => {
+    if (!embarqueActual) return;
+    const res = despacharEmbarque(embarqueActual.id);
+    if (res.ok) {
+      setMensaje({ tipo: 'ok', texto: `¡EMBARQUE DESPACHADO! Salida confirmada y registrada en auditoría` });
+    } else {
+      setMensaje({ tipo: 'err', texto: res.error || 'Bloqueo de salida' });
+    }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* 1. CABECERA Y SELECCIÓN DE EMBARQUE */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="local_shipping" color="#38bdf8" size="20px" />
-            Módulo de Embarques & Despacho Logístico de Andén
-          </h2>
-          <span className="badge badge-info">CONTROL DE REMISIONES</span>
+    <div className="station-container">
+      {/* HEADER ENDFIELD */}
+      <div className="station-header tex-carbon">
+        <div className="station-header-left">
+          <div className="station-deco-sq">06</div>
+          <div className="station-title-box">
+            <span className="station-badge-code">[ESTACIÓN_05 // DESPACHO Y LOGÍSTICA]</span>
+            <h1 className="station-title">Embarques y Salida de Producto Terminado</h1>
+            <span className="station-subtitle">
+              Manifiesto de carga con revalidación de Calidad en tiempo real (Incidente C)
+            </span>
+          </div>
         </div>
+        <div className="station-header-right">
+          <button onClick={() => setModalNuevo(true)} className="btn btn-yellow">
+            + PROGRAMAR EMBARQUE
+          </button>
+        </div>
+      </div>
 
-        <div className="panel-body">
-          {notificacion && (
-            <div className={`alert-banner ${notificacion.tipo === 'ok' ? 'alert-banner-ok' : 'alert-banner-error'}`}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name={notificacion.tipo === 'ok' ? 'check_circle' : 'error'} size="16px" />
-                {notificacion.texto}
-              </span>
-              <button
-                type="button"
-                onClick={() => setNotificacion(null)}
-                style={{ background: 'transparent', border: 'none', color: 'inherit', padding: '2px 6px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-              >
-                <Icon name="close" size="16px" />
-              </button>
-            </div>
-          )}
-
-          {/* Selector de Embarque */}
+      <div className="station-body">
+        {mensaje && (
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '12px',
-              marginBottom: '16px',
+              padding: '0.75rem 1.25rem',
+              background: mensaje.tipo === 'ok' ? 'var(--ok-bg)' : 'var(--danger-bg)',
+              color: mensaje.tipo === 'ok' ? 'var(--ok)' : 'var(--danger)',
+              border: `1px solid ${mensaje.tipo === 'ok' ? 'var(--ok-border)' : 'var(--danger-border)'}`,
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.8rem',
+              fontWeight: 700,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '320px' }}>
-              <label htmlFor="select-emb" style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase' }}>
-                Orden de Embarque:
-              </label>
-              <select
-                id="select-emb"
-                value={embarqueActivoId}
-                onChange={(e) => {
-                  setEmbarqueActivoId(Number(e.target.value));
-                  setNotificacion(null);
-                }}
-                style={{ flex: 1 }}
-              >
-                {embarques.map((emb) => {
-                  const cli = CLIENTES_CATALOGO.find((c) => c.id === emb.id_cliente);
-                  return (
-                    <option key={emb.id} value={emb.id}>
-                      {emb.referencia_embarque} · {cli?.nombre_cliente} · [{emb.estado.toUpperCase()}]
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+            [{mensaje.tipo === 'ok' ? 'SUCCESS' : 'ERROR'}] {mensaje.texto}
+          </div>
+        )}
 
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              onClick={() => setMostrarNuevoEmbarque(!mostrarNuevoEmbarque)}
-            >
-              <Icon name={mostrarNuevoEmbarque ? 'close' : 'add_task'} size="16px" />
-              {mostrarNuevoEmbarque ? 'Cancelar' : 'Programar Nuevo Embarque'}
-            </button>
+        {/* SELECTOR DE EMBARQUE */}
+        <div className="panel">
+          <div className="panel-header">
+            <span className="panel-title">SELECCIÓN DE EMBARQUE ACTIVO (P-26..P-29)</span>
+            {embarqueActual && (
+              <span className={`badge ${embarqueActual.estado === 'Despachado' ? 'badge-ok' : 'badge-info'}`}>
+                {embarqueActual.estado.toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="panel-body">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem', alignItems: 'center' }}>
+              <div className="form-group">
+                <label className="form-label">EXPEDIENTE DE EMBARQUE</label>
+                <select
+                  className="form-select"
+                  value={embarqueSeleccionadoId}
+                  onChange={(e) => setEmbarqueSeleccionadoId(Number(e.target.value))}
+                >
+                  {embarques.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.referencia_embarque} - {e.cliente_nombre} [Pedido: {e.id_pedido}] - {e.estado}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {embarqueActual && (
+                <div style={{ background: 'var(--dark-700)', padding: '0.75rem 1rem', border: '1px solid var(--dark-500)', fontSize: '0.8rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--accent)' }}>
+                      Transportista: {embarqueActual.transportista_nombre}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--gray-300)' }}>
+                      Prog: {embarqueActual.fecha_programada}
+                    </span>
+                  </div>
+                  <div style={{ color: 'var(--gray-200)', fontSize: '0.75rem' }}>
+                    Chofer: <strong>{embarqueActual.nombre_chofer}</strong> | Placas: <strong>{embarqueActual.placas_unidad}</strong> | Cliente: <strong>{embarqueActual.cliente_nombre}</strong>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* MANIFIESTO DE CARGA Y ASIGNACIÓN */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
+          {/* CAJAS ASIGNADAS AL MANIFIESTO */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">MANIFIESTO DE CARGA ({cajasAsignadas.length} CAJAS)</span>
+              <span className="badge badge-accent">
+                TOTAL: {cajasAsignadas.reduce((sum, c) => sum + (c.piezas_actuales || 0), 0)} PIEZAS
+              </span>
+            </div>
+            <div className="panel-body">
+              {cajasAsignadas.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem 0', fontSize: '0.85rem' }}>
+                  [SIN CAJAS ASIGNADAS AL EMBARQUE - SELECCIONE DE LA LISTA DE DISPONIBLES]
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                  {cajasAsignadas.map((caja) => (
+                    <div
+                      key={caja.id}
+                      style={{
+                        background: 'var(--dark-700)',
+                        border: '1px solid var(--dark-500)',
+                        borderLeft: '4px solid var(--accent)',
+                        padding: '0.6rem 0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                          {caja.codigo_caja} // {caja.modelo_nombre} ({caja.color_nombre})
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--gray-300)' }}>
+                          {caja.piezas_actuales} unidades selladas | Creador: Usuario #{caja.id_usuario_creador}
+                        </div>
+                      </div>
+
+                      {embarqueActual?.estado !== 'Despachado' && (
+                        <button
+                          type="button"
+                          onClick={() => handleRetirarCaja(caja.id)}
+                          className="btn btn-outline"
+                          style={{ height: '1.8rem', padding: '0 0.5rem', fontSize: '0.65rem' }}
+                        >
+                          RETIRAR
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {embarqueActual && embarqueActual.estado !== 'Despachado' && (
+                <button
+                  type="button"
+                  onClick={handleDespachar}
+                  disabled={cajasAsignadas.length === 0}
+                  className="btn btn-yellow"
+                  style={{ width: '100%', height: '3.5rem', fontSize: '1rem' }}
+                >
+                  CONFIRMAR SALIDA Y DESPACHO DE ANDÉN (REVALIDAR CALIDAD)
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Formulario desplegable para nuevo embarque */}
-          {mostrarNuevoEmbarque && (
-            <form
-              onSubmit={handleCrearEmbarque}
-              style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #28374d',
-                padding: '16px',
-                borderRadius: '2px',
-                marginBottom: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-              }}
-            >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="schedule_send" size="16px" color="#38bdf8" />
-                Programar Nueva Salida de Andén (embarque)
+          {/* CAJAS CERRADAS DISPONIBLES DEL CLIENTE (P-27) */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">CAJAS CERRADAS DE {embarqueActual?.cliente_nombre?.toUpperCase()}</span>
+              <span className="badge badge-accent">{cajasDisponibles.length} DISPONIBLES</span>
+            </div>
+            <div className="panel-body">
+              {cajasDisponibles.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem 0', fontSize: '0.85rem' }}>
+                  [NO HAY MÁS CAJAS CERRADAS PARA ESTE CLIENTE EN ALMACÉN]
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {cajasDisponibles.map((caja) => (
+                    <div
+                      key={caja.id}
+                      style={{
+                        background: 'var(--dark-700)',
+                        border: '1px solid var(--dark-500)',
+                        padding: '0.6rem 0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                          {caja.codigo_caja}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--gray-300)' }}>
+                          {caja.modelo_nombre} ({caja.color_nombre}) - {caja.piezas_actuales} pzas
+                        </div>
+                      </div>
+
+                      {embarqueActual?.estado !== 'Despachado' && (
+                        <button
+                          type="button"
+                          onClick={() => handleAsignarCaja(caja.id)}
+                          className="btn btn-carbon"
+                          style={{ height: '1.8rem', padding: '0 0.6rem', fontSize: '0.65rem' }}
+                        >
+                          + AGREGAR
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MODAL PROGRAMAR EMBARQUE */}
+      {modalNuevo && (
+        <div className="modal-overlay">
+          <div className="modal-content tex-carbon">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <span className="station-title" style={{ fontSize: '1.2rem' }}>
+                PROGRAMAR EMBARQUE (P-26)
               </span>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
-                <div>
-                  <label htmlFor="nuevo-cliente" style={{ display: 'block', marginBottom: '4px' }}>Cliente Destino:</label>
-                  <select
-                    id="nuevo-cliente"
-                    value={nuevoClienteId}
-                    onChange={(e) => setNuevoClienteId(Number(e.target.value))}
-                  >
-                    {CLIENTES_CATALOGO.map((cli) => (
-                      <option key={cli.id} value={cli.id}>
-                        {cli.nombre_cliente} ({cli.tipo_cliente})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="nuevo-transp" style={{ display: 'block', marginBottom: '4px' }}>Transportista Autorizado:</label>
-                  <select
-                    id="nuevo-transp"
-                    value={nuevoTransportistaId}
-                    onChange={(e) => setNuevoTransportistaId(Number(e.target.value))}
-                  >
-                    {TRANSPORTISTAS_CATALOGO.map((tra) => (
-                      <option key={tra.id} value={tra.id}>
-                        {tra.nombre} - RFC: {tra.rfc}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="fecha-prog" style={{ display: 'block', marginBottom: '4px' }}>Fecha Programada:</label>
+              <button onClick={() => setModalNuevo(false)} className="btn btn-outline" style={{ height: '2rem' }}>
+                CERRAR
+              </button>
+            </div>
+            <form onSubmit={handleCrear} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">PEDIDO / ORDEN DE COMPRA</label>
                   <input
-                    id="fecha-prog"
-                    type="date"
-                    value={nuevaFechaProg}
-                    onChange={(e) => setNuevaFechaProg(e.target.value)}
+                    type="text"
+                    required
+                    className="form-input"
+                    value={pedido}
+                    onChange={(e) => setPedido(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">CLIENTE DESTINO</label>
+                  <select className="form-select" value={idCliente} onChange={(e) => setIdCliente(Number(e.target.value))}>
+                    {CATALOGO_CLIENTES.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre_cliente}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">LÍNEA TRANSPORTISTA</label>
+                  <select
+                    className="form-select"
+                    value={idTransportista}
+                    onChange={(e) => setIdTransportista(Number(e.target.value))}
+                  >
+                    {CATALOGO_TRANSPORTISTAS.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">FECHA PROGRAMADA DE SALIDA</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    value={fechaProg}
+                    onChange={(e) => setFechaProg(e.target.value)}
                   />
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="obs-prog" style={{ display: 'block', marginBottom: '4px' }}>Instrucciones / Observaciones:</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">NOMBRE DEL CHOFER</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    value={chofer}
+                    onChange={(e) => setChofer(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">PLACAS DE LA UNIDAD</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    value={placas}
+                    onChange={(e) => setPlacas(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">OBSERVACIONES DE EMBARQUE</label>
                 <input
-                  id="obs-prog"
                   type="text"
-                  placeholder="Detalles de entrega, andén, chofer..."
-                  value={nuevasObservaciones}
-                  onChange={(e) => setNuevasObservaciones(e.target.value)}
+                  className="form-input"
+                  value={obs}
+                  onChange={(e) => setObs(e.target.value)}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                <button type="submit" className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Icon name="check" size="16px" />
-                  Confirmar Registro de Embarque
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button type="button" onClick={() => setModalNuevo(false)} className="btn btn-outline">
+                  CANCELAR
+                </button>
+                <button type="submit" className="btn btn-yellow">
+                  PROGRAMAR EMBARQUE
                 </button>
               </div>
             </form>
-          )}
-
-          {/* Ficha técnica del embarque */}
-          {embarqueActivo && (
-            <div
-              style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #233145',
-                padding: '16px',
-                borderRadius: '2px',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '12px',
-                fontFamily: 'var(--font-mono)',
-              }}
-            >
-              <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Folio Embarque:</span>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: '#38bdf8' }}>
-                  {embarqueActivo.referencia_embarque}
-                </div>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Cliente:</span>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#f1f5f9' }}>
-                  {clienteActivo?.nombre_cliente}
-                </div>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Transporte / RFC:</span>
-                <div style={{ fontSize: '13px', color: '#f1f5f9' }}>
-                  {transportistaActivo?.nombre}
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>RFC: {transportistaActivo?.rfc}</div>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Fecha Salida:</span>
-                <div style={{ fontSize: '13px', color: '#f1f5f9' }}>
-                  {embarqueActivo.fecha_programada}
-                </div>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase' }}>Estado de Andén:</span>
-                <div>
-                  <span className={`badge ${embarqueActivo.estado === 'En Tránsito' ? 'badge-ok' : 'badge-warn'}`}>
-                    {embarqueActivo.estado.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 2. CARGA DE CAJAS SELLADAS */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="move_to_inbox" size="18px" color="#38bdf8" />
-            Asignación de Cajas a la Carga (embarque_caja)
-          </h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#8493a8' }}>
-            {cajasDisponibles.length} Cajas Disponibles en Almacén
-          </span>
-        </div>
-
-        <div className="panel-body">
-          <form onSubmit={handleAsignarCaja} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ flex: 1, minWidth: '320px' }}>
-              <select
-                value={cajaParaAsignarId}
-                onChange={(e) => setCajaParaAsignarId(Number(e.target.value))}
-                disabled={embarqueActivo?.estado === 'En Tránsito' || cajasDisponibles.length === 0}
-              >
-                {cajasDisponibles.map((c) => {
-                  const cat = CATALOGO_CAJAS.find((k) => k.id === c.id_cat_caja);
-                  const pzs = unidades.filter((u) => u.id_caja === c.id).length;
-                  return (
-                    <option key={c.id} value={c.id}>
-                      {c.codigo_caja} · {cat?.tipo_caja} ({pzs} piezas) · [{c.estado.toUpperCase()}]
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              disabled={embarqueActivo?.estado === 'En Tránsito' || cajasDisponibles.length === 0}
-            >
-              <Icon name="add" size="16px" />
-              Cargar Caja a Remisión
-            </button>
-          </form>
-
-          <span style={{ display: 'block', marginTop: '8px', fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
-            * Regla estricta: Solo cajas con dictamen de <strong>Cerrada</strong> en Empaque pueden ser asignadas a la unidad de transporte.
-          </span>
-        </div>
-      </div>
-
-      {/* 3. MANIFIESTO DE CARGA */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="receipt_long" size="18px" color="#38bdf8" />
-            Manifiesto de Carga: {embarqueActivo?.referencia_embarque}
-          </h2>
-          <span className="badge badge-info">
-            {cajasEnEmbarque.length} Cajas · {totalPiezasEnEmbarque} Bocinas
-          </span>
-        </div>
-
-        <div className="panel-body" style={{ padding: 0 }}>
-          <div className="table-wrapper" style={{ border: 'none' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '60px' }}>Item</th>
-                  <th>Código de Caja</th>
-                  <th>Modelo de Caja</th>
-                  <th>Contenido (Unidades)</th>
-                  <th>Estado</th>
-                  <th style={{ width: '120px' }}>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cajasEnEmbarque.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', color: '#64748b', padding: '16px' }}>
-                      (No hay cajas cargadas en este embarque. Seleccione una caja arriba para agregarla).
-                    </td>
-                  </tr>
-                ) : (
-                  cajasEnEmbarque.map((c, idx) => {
-                    const cat = CATALOGO_CAJAS.find((k) => k.id === c.id_cat_caja);
-                    const pzs = unidades.filter((u) => u.id_caja === c.id).length;
-                    return (
-                      <tr key={c.id}>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>#{idx + 1}</td>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
-                          {c.codigo_caja}
-                        </td>
-                        <td>{cat?.tipo_caja}</td>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                          {pzs} piezas
-                        </td>
-                        <td>
-                          <span className="badge badge-ok">{c.estado}</span>
-                        </td>
-                        <td>
-                          {embarqueActivo?.estado !== 'En Tránsito' ? (
-                            <button
-                              type="button"
-                              className="btn btn-danger"
-                              style={{ padding: '2px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                              onClick={() => handleRetirarCaja(c.id, c.codigo_caja)}
-                            >
-                              <Icon name="delete" size="14px" />
-                              Bajar de Carga
-                            </button>
-                          ) : (
-                            <span style={{ fontSize: '11px', color: '#64748b' }}>Bloqueado</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Barra de acción de despacho */}
-          <div
-            style={{
-              padding: '14px 16px',
-              backgroundColor: '#161f2c',
-              borderTop: '1px solid #233145',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '12px',
-            }}
-          >
-            <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
-              <span style={{ color: '#8493a8' }}>TOTAL REMISIÓN:</span>{' '}
-              <strong style={{ color: '#f1f5f9' }}>{cajasEnEmbarque.length} cajas selladas</strong> ({totalPiezasEnEmbarque} bocinas terminadas).
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button" className="btn" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => window.print()}>
-                <Icon name="print" size="16px" />
-                Imprimir Remisión
-              </button>
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={handleConfirmarDespacho}
-                disabled={embarqueActivo?.estado === 'En Tránsito' || cajasEnEmbarque.length === 0}
-                style={{ padding: '8px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Icon name="local_shipping" size="18px" />
-                Confirmar Salida de Transporte
-              </button>
-            </div>
           </div>
         </div>
-      </div>
-
-      {/* 4. BITÁCORA LOGÍSTICA */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="history" size="18px" color="#38bdf8" />
-            Bitácora de Salidas y Trazabilidad (embarque_historial)
-          </h2>
-          <span className="badge badge-neutral">{historialEmbarque.length} Eventos</span>
-        </div>
-        <div className="panel-body" style={{ padding: 0 }}>
-          <div className="table-wrapper" style={{ border: 'none' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '130px' }}>Hora</th>
-                  <th>Operación</th>
-                  <th>Detalle</th>
-                  <th>Responsable</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historialEmbarque.map((ev) => (
-                  <tr key={ev.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{ev.fecha_hora}</td>
-                    <td style={{ fontWeight: 600, color: '#38bdf8' }}>{ev.operacion}</td>
-                    <td>{ev.detalle}</td>
-                    <td style={{ fontSize: '11px', color: '#cbd5e1' }}>{ev.usuario}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
-};
-
-export default EmbarquesStation;
+}

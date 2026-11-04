@@ -1,209 +1,299 @@
 import React, { useState } from 'react';
-import { usePlanta } from '../context/PlantaContext';
-import Icon from './common/Icon';
+import { usePlanta, CATALOGO_DEFECTOS_OFICIALES } from '../context/PlantaContext';
 
-export const EnsambleStation: React.FC = () => {
-  const { unidades, registrarUnidadEnsamble, sesion } = usePlanta();
-  const [inputSerial, setInputSerial] = useState('');
-  const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
+export default function EnsambleStation() {
+  const {
+    sesion,
+    ordenes,
+    conteosEnsamble,
+    defectosEnsamble,
+    registrarConteoEnsamble,
+    registrarDefectoEnsamble,
+  } = usePlanta();
 
-  const metaTurno = 100;
-  const progresoPct = Math.min(100, Math.round((unidades.length / metaTurno) * 100));
+  // Filtrar órdenes asignadas a la línea activa de la sesión
+  const ordenesLinea = ordenes.filter((o) => o.id_linea_asignada === sesion.linea.id);
+  const [ordenSeleccionadaId, setOrdenSeleccionadaId] = useState<number>(ordenesLinea[0]?.id || ordenes[0]?.id || 1);
+  const [cantidadPiezas, setCantidadPiezas] = useState<number>(10);
+  const [defectoId, setDefectoId] = useState<number>(1);
+  const [cantidadDefectos, setCantidadDefectos] = useState<number>(1);
+  const [obsDefecto, setObsDefecto] = useState<string>('');
+  const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'err'; texto: string } | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const ordenActiva = ordenes.find((o) => o.id === ordenSeleccionadaId);
+
+  // Totales de la línea y turno actuales
+  const totalPiezasTurno = conteosEnsamble
+    .filter((c) => c.id_linea === sesion.linea.id && c.id_turno === sesion.turno.id)
+    .reduce((sum, c) => sum + c.cantidad, 0);
+
+  const totalDefectosTurno = defectosEnsamble
+    .filter((d) => d.id_linea === sesion.linea.id && d.id_turno === sesion.turno.id)
+    .reduce((sum, d) => sum + d.cantidad, 0);
+
+  const handleRegistrarConteo = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputSerial.trim()) {
-      setMensaje({ tipo: 'error', texto: 'Ingrese o escanee el número de serie de la unidad.' });
+    if (!ordenActiva) {
+      setMensaje({ tipo: 'err', texto: 'Seleccione una orden válida' });
       return;
     }
-
-    const res = registrarUnidadEnsamble(inputSerial, 'NS-PRO', 'Negro');
-    if (!res.ok) {
-      setMensaje({ tipo: 'error', texto: res.error || 'Error al registrar unidad.' });
+    const res = registrarConteoEnsamble(ordenActiva.id, cantidadPiezas);
+    if (res.ok) {
+      setMensaje({ tipo: 'ok', texto: `Conteo registrado: +${cantidadPiezas} piezas en orden ${ordenActiva.folio}` });
     } else {
-      setMensaje({
-        tipo: 'ok',
-        texto: `Unidad ${inputSerial.toUpperCase().trim()} registrada exitosamente. Transferida a inspección de calidad.`,
-      });
-      setInputSerial('');
+      setMensaje({ tipo: 'err', texto: res.error || 'Error al registrar conteo' });
     }
   };
 
-  const ultimasUnidades = unidades.slice(0, 8);
+  const handleRegistrarDefecto = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ordenActiva) return;
+    const res = registrarDefectoEnsamble(ordenActiva.id, defectoId, cantidadDefectos, obsDefecto);
+    if (res.ok) {
+      setMensaje({ tipo: 'ok', texto: `Defecto de ensamble registrado correctamente` });
+      setObsDefecto('');
+    } else {
+      setMensaje({ tipo: 'err', texto: res.error || 'Error al registrar defecto' });
+    }
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* 1. CABECERA Y METAS DE TURNO */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="precision_manufacturing" size={18} color="#38bdf8" />
-            Estación de Ensamble · Línea {sesion.linea.nombre_linea}
-          </h2>
-          <span className="badge badge-info">
-            MODELO ACTIVO: NS-PRO (6 PZAS/CAJA)
-          </span>
+    <div className="station-container">
+      {/* HEADER ENDFIELD */}
+      <div className="station-header tex-carbon">
+        <div className="station-header-left">
+          <div className="station-deco-sq">02</div>
+          <div className="station-title-box">
+            <span className="station-badge-code">[ESTACIÓN_01 // CONTEO DE LÍNEA]</span>
+            <h1 className="station-title">Ensamble Mecánico y Estructural</h1>
+            <span className="station-subtitle">
+              Línea activa: {sesion.linea.nombre_linea} | Turno: {sesion.turno.nombre_turno} | Operador: {sesion.usuario.nombre_completo}
+            </span>
+          </div>
         </div>
-        <div className="panel-body">
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '16px',
-              backgroundColor: '#161f2c',
-              border: '1px solid #233145',
-              padding: '14px 18px',
-              borderRadius: '2px',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
-                Objetivo del Turno ({sesion.turno.nombre_turno})
-              </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 700, color: '#f1f5f9' }}>
-                {unidades.length} <span style={{ fontSize: '14px', color: '#64748b' }}>/ {metaTurno} PZAS</span>
-              </div>
-            </div>
-
-            <div style={{ flex: 1, minWidth: '220px', maxWidth: '360px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>
-                <span style={{ color: '#8493a8' }}>EFICIENCIA DE LÍNEA</span>
-                <span style={{ color: '#38bdf8', fontWeight: 700 }}>{progresoPct}%</span>
-              </div>
-              <div className="progress-track" style={{ height: '10px' }}>
-                <div className="progress-fill" style={{ width: `${progresoPct}%` }} />
-              </div>
+        <div className="station-header-right">
+          <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', textTransform: 'uppercase' }}>
+              OBJETIVO DEL TURNO:
+            </span>
+            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>
+              {totalPiezasTurno} / 100 PZAS
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. CAPTURA Y ESCANEO DE SERIE */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="qr_code_scanner" size={18} color="#38bdf8" />
-            Registro de Unidad (Lectura de Código de Barras / QR)
-          </h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#8493a8' }}>
-            Operador: {sesion.usuario.nombre_completo}
-          </span>
-        </div>
-        <div className="panel-body">
-          {mensaje && (
-            <div className={`alert-banner ${mensaje.tipo === 'ok' ? 'alert-banner-ok' : 'alert-banner-error'}`}>
-              <Icon name={mensaje.tipo === 'ok' ? 'check_circle' : 'error'} size={18} color={mensaje.tipo === 'ok' ? '#10b981' : '#ef4444'} />
-              <span style={{ flex: 1 }}>{mensaje.texto}</span>
-              <button
-                type="button"
-                onClick={() => setMensaje(null)}
-                style={{ background: 'transparent', border: 'none', color: 'inherit', padding: '2px 6px', fontSize: '14px', cursor: 'pointer', display: 'flex' }}
-              >
-                <Icon name="close" size={16} />
-              </button>
-            </div>
-          )}
+      <div className="station-body">
+        {mensaje && (
+          <div
+            style={{
+              padding: '0.75rem 1.25rem',
+              background: mensaje.tipo === 'ok' ? 'var(--ok-bg)' : 'var(--danger-bg)',
+              color: mensaje.tipo === 'ok' ? 'var(--ok)' : 'var(--danger)',
+              border: `1px solid ${mensaje.tipo === 'ok' ? 'var(--ok-border)' : 'var(--danger-border)'}`,
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+            }}
+          >
+            [{mensaje.tipo === 'ok' ? 'SUCCESS' : 'ERROR'}] {mensaje.texto}
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '600px' }}>
-              <label htmlFor="serial-input" style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Número de Serie de Bocina:
-              </label>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <input
-                  id="serial-input"
-                  type="text"
-                  autoFocus
-                  value={inputSerial}
-                  onChange={(e) => setInputSerial(e.target.value)}
-                  placeholder="Escanee o teclee (ej. UN0052)"
-                  className="scanner-input"
-                  style={{ flex: 1 }}
-                />
-                <button type="submit" className="btn btn-primary" style={{ padding: '0 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Icon name="add_circle" size={16} />
-                  Registrar Pieza [↵]
+        {/* INDICADORES CLAVE */}
+        <div className="kpi-row">
+          <div className="kpi-card">
+            <span className="kpi-label">ENSAMBLADAS HOY</span>
+            <span className="kpi-value">{totalPiezasTurno}</span>
+            <span className="kpi-delta" style={{ color: 'var(--ok)' }}>
+              [Línea {sesion.linea.nombre_linea}]
+            </span>
+          </div>
+          <div className="kpi-card">
+            <span className="kpi-label">DEFECTOS DE ENSAMBLE</span>
+            <span className="kpi-value">{totalDefectosTurno}</span>
+            <span className="kpi-delta" style={{ color: totalDefectosTurno > 0 ? 'var(--warn)' : 'var(--ok)' }}>
+              [Fallas mecánicas]
+            </span>
+          </div>
+          <div className="kpi-card">
+            <span className="kpi-label">ORDEN EN TRABAJO</span>
+            <span className="kpi-value" style={{ fontSize: '1.4rem' }}>
+              {ordenActiva?.folio || 'N/A'}
+            </span>
+            <span className="kpi-delta" style={{ color: 'var(--accent)' }}>
+              {ordenActiva?.modelo_nombre} - {ordenActiva?.color_nombre}
+            </span>
+          </div>
+          <div className="kpi-card">
+            <span className="kpi-label">AVANCE DE ORDEN</span>
+            <span className="kpi-value" style={{ fontSize: '1.4rem' }}>
+              {ordenActiva ? `${ordenActiva.piezas_ensambladas || 0} / ${ordenActiva.cantidad}` : '0 / 0'}
+            </span>
+            <span className="kpi-delta" style={{ color: 'var(--gray-300)' }}>
+              Destino: {ordenActiva?.cliente_nombre || 'N/A'}
+            </span>
+          </div>
+        </div>
+
+        {/* WORK AREA: CONTEO & DEFECTOS */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          {/* REGISTRO DE CONTEO */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">REGISTRO DE PIEZAS ENSAMBLADAS (P-11, F-03)</span>
+              <span className="badge badge-accent">BATCH_COUNT</span>
+            </div>
+            <div className="panel-body">
+              <form onSubmit={handleRegistrarConteo} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="form-group">
+                  <label className="form-label">SELECCIONAR ORDEN ACTIVA EN LÍNEA</label>
+                  <select
+                    className="form-select"
+                    value={ordenSeleccionadaId}
+                    onChange={(e) => setOrdenSeleccionadaId(Number(e.target.value))}
+                  >
+                    {ordenes.map((ord) => (
+                      <option key={ord.id} value={ord.id}>
+                        {ord.folio} - {ord.modelo_nombre} ({ord.color_nombre}) [{ord.cliente_nombre}] {ord.id_linea_asignada ? `(L${ord.id_linea_asignada})` : '(Sin línea)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">CANTIDAD DE PIEZAS ENSAMBLADAS</label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    className="form-input"
+                    value={cantidadPiezas}
+                    onChange={(e) => setCantidadPiezas(Number(e.target.value))}
+                  />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--gray-300)', marginTop: '0.2rem' }}>
+                    * En ensamble se cuenta por lotes. El número de serie nace oficialmente al aprobar Prueba Funcional.
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {[1, 5, 10, 20].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setCantidadPiezas(num)}
+                      className="btn btn-dark"
+                      style={{ height: '2rem', flex: 1, fontSize: '0.7rem' }}
+                    >
+                      +{num}
+                    </button>
+                  ))}
+                </div>
+
+                <button type="submit" className="btn btn-yellow" style={{ height: '3rem', fontSize: '0.9rem' }}>
+                  REGISTRAR CONTEO DE ENSAMBLE
                 </button>
-              </div>
-              <span style={{ fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
-                Presione ENTER o dispare con la pistola lectora láser. Se asignará automáticamente a la Línea {sesion.linea.nombre_linea}.
-              </span>
+              </form>
             </div>
-          </form>
+          </div>
+
+          {/* REGISTRO DE DEFECTOS DE ENSAMBLE */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">REGISTRO DE INCIDENCIA / DEFECTO DE LÍNEA (P-14)</span>
+              <span className="badge badge-warn">SCRAP_LOG</span>
+            </div>
+            <div className="panel-body">
+              <form onSubmit={handleRegistrarDefecto} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label">CATÁLOGO DE DEFECTO OFICIAL</label>
+                  <select
+                    className="form-select"
+                    value={defectoId}
+                    onChange={(e) => setDefectoId(Number(e.target.value))}
+                  >
+                    {CATALOGO_DEFECTOS_OFICIALES.filter((d) => d.categoria === 'Apariencia' || d.categoria === 'Ensamble' || d.categoria === 'Funcional').map((d) => (
+                      <option key={d.id} value={d.id}>
+                        [{d.categoria.toUpperCase()}] {d.descripcion} ({d.severidad})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">CANTIDAD AFECTADA</label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    className="form-input"
+                    value={cantidadDefectos}
+                    onChange={(e) => setCantidadDefectos(Number(e.target.value))}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">OBSERVACIONES O CAUSA RAÍZ</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Problema de torque en tornillo o rebaba en tapa"
+                    className="form-input"
+                    value={obsDefecto}
+                    onChange={(e) => setObsDefecto(e.target.value)}
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-danger" style={{ marginTop: '0.5rem' }}>
+                  REGISTRAR INCIDENCIA DE ENSAMBLE
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* 3. HISTORIAL DE ENSAMBLE EN TIEMPO REAL */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="history" size={18} color="#38bdf8" />
-            Últimas Unidades Ensambladas en Turno Actual
-          </h2>
-          <span className="badge badge-neutral">{unidades.length} Registradas</span>
-        </div>
-        <div className="panel-body" style={{ padding: 0 }}>
-          <div className="table-wrapper" style={{ border: 'none' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>N° de Serie</th>
-                  <th>Modelo</th>
-                  <th>Color</th>
-                  <th>Hora de Ensamble</th>
-                  <th>Estado en Calidad</th>
-                  <th>Destino de Empaque</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ultimasUnidades.map((u) => {
-                  let badgeClass = 'badge-info';
-                  let estadoTxt = 'Pendiente Inspección';
-
-                  if (u.id_estado_calidad === 1) {
-                    badgeClass = 'badge-ok';
-                    estadoTxt = 'Aprobada';
-                  } else if (u.id_estado_calidad === 2) {
-                    badgeClass = 'badge-warn';
-                    estadoTxt = 'En Retrabajo';
-                  } else if (u.id_estado_calidad === 3) {
-                    badgeClass = 'badge-warn';
-                    estadoTxt = 'En Retención';
-                  } else if (u.id_estado_calidad === 4) {
-                    badgeClass = 'badge-danger';
-                    estadoTxt = 'Scrap (Desecho)';
-                  }
-
-                  return (
-                    <tr key={u.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
-                        {u.numero_serie}
-                      </td>
-                      <td>{u.modelo}</td>
-                      <td>{u.color}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{u.fecha_ensamble}</td>
-                      <td>
-                        <span className={`badge ${badgeClass}`}>{estadoTxt}</span>
-                      </td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
-                        {u.id_caja ? (
-                          <span style={{ color: '#10b981' }}>Caja #{u.id_caja}</span>
-                        ) : (
-                          <span style={{ color: '#64748b' }}>Suelta en piso</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        {/* TABLA DE ÚLTIMOS CONTEOS */}
+        <div className="panel">
+          <div className="panel-header">
+            <span className="panel-title">BITÁCORA DE CONTEOS REGISTRADOS EN TURNO</span>
+            <span className="badge badge-accent">REAL_TIME</span>
+          </div>
+          <div className="panel-body" style={{ padding: 0 }}>
+            <div className="table-container">
+              <table className="tech-table">
+                <thead>
+                  <tr>
+                    <th>HORA REGISTRO</th>
+                    <th>ORDEN</th>
+                    <th>LÍNEA // TURNO</th>
+                    <th>OPERADOR</th>
+                    <th>CANTIDAD</th>
+                    <th>DESTINO SIGUIENTE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {conteosEnsamble.map((c) => {
+                    const ord = ordenes.find((o) => o.id === c.id_orden);
+                    return (
+                      <tr key={c.id}>
+                        <td style={{ fontFamily: 'var(--font-mono)' }}>{c.fecha_hora}</td>
+                        <td style={{ fontWeight: 700, color: 'var(--accent)' }}>{ord?.folio}</td>
+                        <td>
+                          Línea {c.id_linea} / Turno {c.id_turno}
+                        </td>
+                        <td>{sesion.usuario.nombre_completo}</td>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 800 }}>+{c.cantidad} piezas</td>
+                        <td>
+                          <span className="badge badge-info">PASA A PRUEBA FUNCIONAL</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default EnsambleStation;
+}

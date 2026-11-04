@@ -1,14 +1,14 @@
-import type { JSX } from 'react/jsx-runtime';
+import React from 'react';
 import type { SesionOperativa } from '../types/database';
-import { RolesEnum } from '../types/database';
-import Icon from './common/Icon';
+import { USUARIOS_OFICIALES, NOMBRES_ROLES, usePlanta } from '../context/PlantaContext';
 
 export interface MenuItem {
   id: string;
   label: string;
-  icon?: string;
+  code: string; // Ej: '00', '01', '02', '03'
+  iconName?: string;
   roles: number[];
-  component: JSX.Element;
+  component: React.ReactNode;
 }
 
 interface TopbarProps {
@@ -28,220 +28,164 @@ export default function Topbar({
   onCambiarRol,
   onCerrarSesion,
 }: TopbarProps) {
+  const { modoMantenimiento, mensajeMantenimiento, cambiarLineaSesion, cambiarTurnoSesion } = usePlanta();
+
   return (
-    <header
-      style={{
-        backgroundColor: '#0e1520',
-        borderBottom: '1px solid #1f2c3f',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* 1. BARRA PRINCIPAL: BRANDING + TELEMETRÍA DE PLANTA + SESIÓN */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '8px 16px',
-          borderBottom: '1px solid #16202e',
-          flexWrap: 'wrap',
-          gap: '12px',
-        }}
-      >
-        {/* Identidad de Marca y Sistema */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '10px',
-              height: '10px',
-              backgroundColor: '#10b981',
-              boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
-              borderRadius: '1px',
-            }}
-          />
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '15px',
-                fontWeight: 700,
-                letterSpacing: '1px',
-                color: '#f8fafc',
-              }}
-            >
-              NOVA SOUND
-            </span>
-            <span
-              style={{
-                fontSize: '10px',
-                fontFamily: 'var(--font-mono)',
-                color: '#38bdf8',
-                backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                padding: '1px 6px',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                borderRadius: '2px',
-                fontWeight: 600,
-              }}
-            >
-              MES / HMI
-            </span>
+    <header className="topbar-wrapper tex-ruler-top">
+      {/* 0. BANNER DE MANTENIMIENTO TÁCTICO (P-39) */}
+      {modoMantenimiento && (
+        <div className="maintenance-banner tex-warn-stripes">
+          <span style={{ background: '#0a0b0d', color: '#fffa00', padding: '0.1rem 0.5rem', fontWeight: 800 }}>
+            [AVISO DE MANTENIMIENTO ACTIVO]
+          </span>
+          <span>{mensajeMantenimiento}</span>
+          <span style={{ background: '#0a0b0d', color: '#fffa00', padding: '0.1rem 0.5rem', fontWeight: 800 }}>
+            SCADA RESTRICTED MODE
+          </span>
+        </div>
+      )}
+
+      {/* 1. BARRA PRINCIPAL: BRANDING + ESTADO TÉCNICO + SELECTOR ROL */}
+      <div className="topbar-main tex-carbon-subtle">
+        {/* Identidad Arknights Endfield Style */}
+        <div className="topbar-brand">
+          <div className="topbar-brand-mark">NS</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span className="topbar-brand-title">NOVA SOUND</span>
+            <span className="topbar-brand-sub">CONTROL MES // SCADA INDUSTRIAL</span>
           </div>
         </div>
 
-        {/* Ficha Operativa en Vivo + Control de Sesión */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            flexWrap: 'wrap',
-          }}
-        >
-          {/* Indicadores de Estación y Operador */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              backgroundColor: '#070a10',
-              border: '1px solid #1a2536',
-              padding: '4px 10px',
-              borderRadius: '2px',
-              fontSize: '12px',
-              fontFamily: 'var(--font-mono)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <Icon name="badge" size={15} color="#38bdf8" />
-              <span style={{ color: '#64748b', fontSize: '11px' }}>OPERADOR:</span>{' '}
-              <strong style={{ color: '#f1f5f9' }}>{sesion.usuario.nombre_completo}</strong>{' '}
-              <span style={{ color: '#38bdf8', fontSize: '11px' }}>({sesion.usuario.nomina})</span>
-            </div>
-            <span style={{ color: '#263449' }}>|</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <Icon name="precision_manufacturing" size={15} color="#10b981" />
-              <span style={{ color: '#64748b', fontSize: '11px' }}>LÍNEA:</span>{' '}
-              <span className="badge badge-ok" style={{ padding: '1px 5px', fontSize: '10px' }}>
-                {sesion.linea.nombre_linea}
-              </span>
-            </div>
-            <span style={{ color: '#263449' }}>|</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <Icon name="schedule" size={15} color="#f59e0b" />
-              <span style={{ color: '#64748b', fontSize: '11px' }}>TURNO:</span>{' '}
-              <strong style={{ color: '#f59e0b', fontSize: '11px' }}>
-                {sesion.turno.nombre_turno.toUpperCase()}
-              </strong>
+        {/* Telemetría y Controles de Línea / Turno */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          {/* Selector de Línea Operativa */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--gray-300)', textTransform: 'uppercase' }}>
+              LÍNEA:
+            </span>
+            <div style={{ display: 'flex', gap: '2px' }}>
+              {[1, 2, 3].map((lId) => (
+                <button
+                  key={lId}
+                  onClick={() => cambiarLineaSesion(lId)}
+                  style={{
+                    background: sesion.linea.id === lId ? 'var(--accent)' : 'var(--dark-700)',
+                    color: sesion.linea.id === lId ? 'var(--dark-900)' : 'var(--gray-200)',
+                    border: '1px solid var(--dark-500)',
+                    padding: '0.2rem 0.55rem',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  L{lId}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Selector de Rol para Pruebas */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              fontSize: '11px',
-              fontFamily: 'var(--font-mono)',
-            }}
-          >
-            <Icon name="swap_horiz" size={15} color="#64748b" />
-            <span style={{ color: '#64748b', textTransform: 'uppercase' }}>Rol:</span>
+          {/* Selector de Turno */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--gray-300)', textTransform: 'uppercase' }}>
+              TURNO:
+            </span>
+            <div style={{ display: 'flex', gap: '2px' }}>
+              {[
+                { id: 1, label: 'T1-MAÑ' },
+                { id: 2, label: 'T2-TAR' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => cambiarTurnoSesion(t.id)}
+                  style={{
+                    background: sesion.turno.id === t.id ? 'var(--accent)' : 'var(--dark-700)',
+                    color: sesion.turno.id === t.id ? 'var(--dark-900)' : 'var(--gray-200)',
+                    border: '1px solid var(--dark-500)',
+                    padding: '0.2rem 0.55rem',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Simulador de 9 Roles Oficiales (P-37, BD-14) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--dark-900)', padding: '0.25rem 0.6rem', border: '1px solid var(--dark-600)' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 700 }}>
+              ROL:
+            </span>
             <select
               value={sesion.usuario.id_rol}
               onChange={(e) => onCambiarRol(Number(e.target.value))}
               style={{
-                backgroundColor: '#121a26',
-                color: '#38bdf8',
-                border: '1px solid #233145',
-                borderRadius: '2px',
-                padding: '3px 24px 3px 6px',
-                fontSize: '11px',
-                fontWeight: 600,
-                cursor: 'pointer',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--pure-white)',
                 fontFamily: 'var(--font-mono)',
+                fontSize: '0.75rem',
+                outline: 'none',
+                cursor: 'pointer',
               }}
             >
-              <option value={RolesEnum.OPERADOR}>Operador</option>
-              <option value={RolesEnum.INSPECTOR_CALIDAD}>Inspector Calidad</option>
-              <option value={RolesEnum.SUPERVISOR}>Supervisor</option>
-              <option value={RolesEnum.GERENTE}>Gerente</option>
-              <option value={RolesEnum.ADMINISTRADOR}>Administrador</option>
+              {USUARIOS_OFICIALES.map((u) => (
+                <option key={u.id} value={u.id_rol} style={{ background: '#111317', color: '#fff' }}>
+                  [{u.nomina}] {NOMBRES_ROLES[u.id_rol]} - {u.nombre_completo}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Botón Cerrar Sesión */}
+          {/* Info Usuario Activo */}
+          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--pure-white)' }}>
+              {sesion.usuario.nombre_completo}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--gray-300)' }}>
+              {sesion.usuario.nomina} // {NOMBRES_ROLES[sesion.usuario.id_rol]}
+            </span>
+          </div>
+
+          {/* Botón Salir */}
           {onCerrarSesion && (
             <button
-              type="button"
               onClick={onCerrarSesion}
-              className="btn btn-secondary"
-              style={{
-                padding: '4px 8px',
-                fontSize: '11px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                color: '#ef4444',
-                borderColor: 'rgba(239, 68, 68, 0.3)',
-                backgroundColor: 'rgba(239, 68, 68, 0.08)',
-              }}
-              title="Cerrar turno y salir al login"
+              className="btn btn-outline"
+              style={{ height: '1.9rem', padding: '0 0.8rem', fontSize: '0.65rem' }}
+              title="Cerrar Sesión Activa"
             >
-              <Icon name="logout" size={15} color="#ef4444" />
-              <span>Salir</span>
+              SALIR
             </button>
           )}
         </div>
       </div>
 
-      {/* 2. PESTAÑAS DE NAVEGACIÓN ENTRE ESTACIONES CON GOOGLE MATERIAL SYMBOLS */}
-      <nav
-        style={{
-          display: 'flex',
-          gap: '2px',
-          padding: '0 12px',
-          backgroundColor: '#080c13',
-          overflowX: 'auto',
-          borderBottom: '1px solid #16202e',
-        }}
-      >
+      {/* 2. BARRA DE ESTACIONES / WORKSTATIONS NAVIGATION */}
+      <nav className="topbar-stations">
         {items.map((item) => {
-          const activo = vistaActual === item.id;
+          const isActive = vistaActual === item.id;
           return (
             <button
               key={item.id}
-              type="button"
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '12px',
-                fontWeight: activo ? 700 : 500,
-                letterSpacing: '0.3px',
-                padding: '9px 14px',
-                backgroundColor: activo ? '#121824' : 'transparent',
-                color: activo ? '#f8fafc' : '#7d8da1',
-                border: 'none',
-                borderTop: activo ? '2px solid #0284c7' : '2px solid transparent',
-                borderRight: '1px solid #141c28',
-                borderLeft: '1px solid #141c28',
-                borderRadius: '0',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.15s ease',
-              }}
+              className={`station-tab ${isActive ? 'active' : ''}`}
               onClick={() => setVistaActual(item.id)}
             >
-              {item.icon && (
-                <Icon
-                  name={item.icon}
-                  size={16}
-                  color={activo ? '#38bdf8' : '#64748b'}
-                />
-              )}
-              {item.label}
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.65rem',
+                  color: isActive ? 'var(--dark-900)' : 'var(--accent)',
+                  fontWeight: 800,
+                }}
+              >
+                [{item.code}]
+              </span>
+              <span>{item.label}</span>
             </button>
           );
         })}

@@ -1,442 +1,485 @@
-import React, { useState, useEffect } from 'react';
-import { EstadosCalidadEnum } from '../types/database';
-import { usePlanta, CATALOGO_CAJAS } from '../context/PlantaContext';
-import Icon from './common/Icon';
+import React, { useState } from 'react';
+import {
+  usePlanta,
+  CATALOGO_CLIENTES,
+  CATALOGO_MODELOS,
+  CATALOGO_COLORES,
+} from '../context/PlantaContext';
 
-export const EmpaqueStation: React.FC = () => {
+export default function EmpaqueStation() {
   const {
-    unidades,
     cajas,
-    movimientosEmpaque,
+    detallesCajas,
+    unidades,
     crearCaja,
-    empacarUnidadEnCaja,
-    cerrarYSellarCaja,
-    sesion,
+    empacarPorSerie,
+    cerrarCaja,
+    solicitarReaperturaCaja,
+    retirarUnidadCaja,
   } = usePlanta();
 
-  // Caja seleccionada actualmente en terminal
-  const [cajaActivaId, setCajaActivaId] = useState<number>(1);
+  const [cajaSeleccionadaId, setCajaSeleccionadaId] = useState<number>(cajas[0]?.id || 1);
+  const [serieInput, setSerieInput] = useState<string>('');
+  const [modalNuevaCaja, setModalNuevaCaja] = useState<boolean>(false);
+  const [modalReapertura, setModalReapertura] = useState<boolean>(false);
+  const [modalRetiro, setModalRetiro] = useState<boolean>(false);
+  const [serieRetirar, setSerieRetirar] = useState<string>('');
+  const [motivoReapertura, setMotivoReapertura] = useState<string>('');
+  const [motivoRetiro, setMotivoRetiro] = useState<string>('');
 
-  useEffect(() => {
-    if (cajas.length > 0 && !cajas.some((c) => c.id === cajaActivaId)) {
-      setCajaActivaId(cajas[0].id);
+  // Formulario nueva caja
+  const [nuevoClienteId, setNuevoClienteId] = useState<number>(CATALOGO_CLIENTES[0].id);
+  const [nuevoModeloId, setNuevoModeloId] = useState<number>(CATALOGO_MODELOS[0].id);
+  const [nuevoColorId, setNuevoColorId] = useState<number>(CATALOGO_COLORES[0].id);
+
+  const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'err'; texto: string } | null>(null);
+
+  const cajaActual = cajas.find((c) => c.id === cajaSeleccionadaId);
+  const detallesDeCaja = detallesCajas.filter((d) => d.id_caja === cajaSeleccionadaId && !d.retirada);
+  const capacidad = cajaActual?.capacidad || 6;
+  const ocupacion = cajaActual?.piezas_actuales || detallesDeCaja.length;
+  const porcentaje = Math.min(100, Math.round((ocupacion / capacidad) * 100));
+
+  const handleCrearCaja = (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = crearCaja(nuevoClienteId, nuevoModeloId, nuevoColorId);
+    if (res.ok && res.caja) {
+      setCajaSeleccionadaId(res.caja.id);
+      setModalNuevaCaja(false);
+      setMensaje({ tipo: 'ok', texto: `Caja ${res.caja.codigo_caja} abierta con capacidad de ${res.caja.capacidad} piezas` });
+    } else {
+      setMensaje({ tipo: 'err', texto: res.error || 'Error al abrir caja' });
     }
-  }, [cajas, cajaActivaId]);
-
-  // Input de código de serie
-  const [inputSerial, setInputSerial] = useState('');
-
-  // Notificaciones operativas
-  const [mensajeEstado, setMensajeEstado] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
-
-  // Apertura de nueva caja
-  const [mostrarCrearCaja, setMostrarCrearCaja] = useState(false);
-  const [nuevoTipoCajaId, setNuevoTipoCajaId] = useState<number>(3); // PRO por defecto
-
-  // Obtener caja activa y su catálogo
-  const cajaActiva = cajas.find((c) => c.id === cajaActivaId) ?? cajas[0];
-  const catalogoActivo = CATALOGO_CAJAS.find((cat) => cat.id === cajaActiva?.id_cat_caja);
-  const unidadesEnCajaActiva = unidades.filter((u) => u.id_caja === cajaActiva?.id);
-  const capacidadMaxima = catalogoActivo?.capacidad_maxima ?? 0;
-  const cantidadActual = unidadesEnCajaActiva.length;
-  const cajaLlena = capacidadMaxima > 0 && cantidadActual >= capacidadMaxima;
-  const porcentajeLlenado = capacidadMaxima > 0 ? Math.round((cantidadActual / capacidadMaxima) * 100) : 0;
-
-  // Piezas aprobadas listas para empaque (sueltas en planta)
-  const piezasListasParaEmpaque = unidades.filter(
-    (u) => u.id_estado_calidad === EstadosCalidadEnum.APROBADA && u.id_caja === null
-  );
+  };
 
   const handleEmpacar = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputSerial.trim()) {
-      setMensajeEstado({ tipo: 'error', texto: 'Ingrese o escanee un número de serie válido.' });
+    if (!cajaActual) return;
+    if (!serieInput.trim()) {
+      setMensaje({ tipo: 'err', texto: 'Ingrese un número de serie' });
       return;
     }
-
-    if (!cajaActiva) {
-      setMensajeEstado({ tipo: 'error', texto: 'No hay ninguna caja seleccionada.' });
-      return;
-    }
-
-    const res = empacarUnidadEnCaja(inputSerial, cajaActiva.id);
-    if (!res.ok) {
-      setMensajeEstado({ tipo: 'error', texto: res.error || 'Error al empacar unidad.' });
+    const res = empacarPorSerie(serieInput.trim().toUpperCase(), cajaActual.id);
+    if (res.ok) {
+      setMensaje({ tipo: 'ok', texto: `Unidad ${serieInput.trim()} empacada en slot ${ocupacion + 1}/${capacidad}` });
+      setSerieInput('');
     } else {
-      setMensajeEstado({
-        tipo: 'ok',
-        texto: `✓ Unidad ${inputSerial.toUpperCase().trim()} empacada con éxito en ${cajaActiva.codigo_caja}.`,
-      });
-      setInputSerial('');
+      setMensaje({ tipo: 'err', texto: res.error || 'Rechazo de empaque' });
     }
   };
 
-  const handleCerrarCaja = () => {
-    if (!cajaActiva) return;
-    const res = cerrarYSellarCaja(cajaActiva.id);
-    if (!res.ok) {
-      setMensajeEstado({ tipo: 'error', texto: res.error || 'Error al sellar caja.' });
+  const handleCerrar = () => {
+    if (!cajaActual) return;
+    const res = cerrarCaja(cajaActual.id);
+    if (res.ok) {
+      setMensaje({ tipo: 'ok', texto: `Caja ${cajaActual.codigo_caja} cerrada y sellada` });
     } else {
-      setMensajeEstado({
-        tipo: 'ok',
-        texto: `✓ Caja ${cajaActiva.codigo_caja} cerrada y sellada formalmente. Ahora disponible para Embarque.`,
-      });
+      setMensaje({ tipo: 'err', texto: res.error || 'Error al cerrar caja' });
     }
   };
 
-  const handleCrearNuevaCaja = () => {
-    const nueva = crearCaja(nuevoTipoCajaId);
-    setCajaActivaId(nueva.id);
-    setMostrarCrearCaja(false);
-    setMensajeEstado({
-      tipo: 'ok',
-      texto: `✓ Nueva caja ${nueva.codigo_caja} aperturada exitosamente en Línea ${sesion.linea.nombre_linea}.`,
-    });
+  const handleSolicitarReapertura = () => {
+    if (!cajaActual) return;
+    const res = solicitarReaperturaCaja(cajaActual.id, motivoReapertura);
+    if (res.ok) {
+      setMensaje({ tipo: 'ok', texto: `Solicitud de reapertura enviada al supervisor de almacén` });
+      setModalReapertura(false);
+      setMotivoReapertura('');
+    } else {
+      setMensaje({ tipo: 'err', texto: res.error || 'Error al enviar solicitud' });
+    }
+  };
+
+  const handleRetirarUnidad = () => {
+    if (!cajaActual || !serieRetirar) return;
+    const res = retirarUnidadCaja(cajaActual.id, serieRetirar, motivoRetiro);
+    if (res.ok) {
+      setMensaje({ tipo: 'ok', texto: `Unidad ${serieRetirar} retirada de la caja ${cajaActual.codigo_caja}` });
+      setModalRetiro(false);
+      setMotivoRetiro('');
+    } else {
+      setMensaje({ tipo: 'err', texto: res.error || 'Error al retirar unidad' });
+    }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* 1. SELECCIÓN Y ESTADO DE CAJA ACTIVA */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="inventory_2" color="#f59e0b" size="20px" />
-            Estación de Empaque & Embalaje · Línea {sesion.linea.nombre_linea}
-          </h2>
-          <span className="badge badge-info">CONTROL DE LOTES Y CONTENEDORES</span>
+    <div className="station-container">
+      {/* HEADER ENDFIELD */}
+      <div className="station-header tex-carbon">
+        <div className="station-header-left">
+          <div className="station-deco-sq">05</div>
+          <div className="station-title-box">
+            <span className="station-badge-code">[ESTACIÓN_04 // FORMACIÓN Y SELLADO]</span>
+            <h1 className="station-title">Empaque y Consolidación de Cajas</h1>
+            <span className="station-subtitle">
+              Validación por cliente/modelo (Prevención Incidente B) y sellado de seguridad
+            </span>
+          </div>
         </div>
+        <div className="station-header-right">
+          <button onClick={() => setModalNuevaCaja(true)} className="btn btn-yellow">
+            + ABRIR NUEVA CAJA
+          </button>
+        </div>
+      </div>
 
-        <div className="panel-body">
-          {mensajeEstado && (
-            <div className={`alert-banner ${mensajeEstado.tipo === 'ok' ? 'alert-banner-ok' : 'alert-banner-error'}`}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name={mensajeEstado.tipo === 'ok' ? 'check_circle' : 'error'} size="16px" />
-                {mensajeEstado.texto}
-              </span>
-              <button
-                type="button"
-                onClick={() => setMensajeEstado(null)}
-                style={{ background: 'transparent', border: 'none', color: 'inherit', padding: '2px 6px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-              >
-                <Icon name="close" size="16px" />
-              </button>
-            </div>
-          )}
-
-          {/* Selector de Caja y Apertura */}
+      <div className="station-body">
+        {mensaje && (
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '12px',
-              marginBottom: '16px',
+              padding: '0.75rem 1.25rem',
+              background: mensaje.tipo === 'ok' ? 'var(--ok-bg)' : 'var(--danger-bg)',
+              color: mensaje.tipo === 'ok' ? 'var(--ok)' : 'var(--danger)',
+              border: `1px solid ${mensaje.tipo === 'ok' ? 'var(--ok-border)' : 'var(--danger-border)'}`,
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.8rem',
+              fontWeight: 700,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '320px' }}>
-              <label htmlFor="select-caja" style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase' }}>
-                Caja Activa:
-              </label>
-              <select
-                id="select-caja"
-                value={cajaActivaId}
-                onChange={(e) => {
-                  setCajaActivaId(Number(e.target.value));
-                  setMensajeEstado(null);
-                }}
-                style={{ flex: 1 }}
-              >
-                {cajas.map((c) => {
-                  const cat = CATALOGO_CAJAS.find((k) => k.id === c.id_cat_caja);
-                  const conteo = unidades.filter((u) => u.id_caja === c.id).length;
-                  return (
-                    <option key={c.id} value={c.id}>
-                      {c.codigo_caja} · {cat?.tipo_caja} ({conteo}/{cat?.capacidad_maxima} pzas) · [{c.estado.toUpperCase()}]
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              onClick={() => setMostrarCrearCaja(!mostrarCrearCaja)}
-            >
-              <Icon name={mostrarCrearCaja ? 'close' : 'add_box'} size="16px" />
-              {mostrarCrearCaja ? 'Cancelar' : 'Aperturar Nueva Caja'}
-            </button>
+            [{mensaje.tipo === 'ok' ? 'SUCCESS' : 'ERROR'}] {mensaje.texto}
           </div>
+        )}
 
-          {/* Subpanel para apertura de caja */}
-          {mostrarCrearCaja && (
-            <div
-              style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #28374d',
-                padding: '14px',
-                borderRadius: '2px',
-                marginBottom: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-              }}
-            >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="add_circle" size="16px" color="#38bdf8" />
-                Aperturar Nuevo Contenedor (cat_cajas)
-              </span>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* SELECTOR DE CAJA ACTIVA Y ESTADO */}
+        <div className="panel">
+          <div className="panel-header">
+            <span className="panel-title">SELECCIÓN DE CAJA DE TRABAJO (P-21..P-25)</span>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <span className="badge badge-accent">OCUPACIÓN: {ocupacion} / {capacidad} PZAS</span>
+              {cajaActual && (
+                <span className={`badge ${cajaActual.estado === 'Abierta' ? 'badge-ok' : 'badge-danger'}`}>
+                  CAJA {cajaActual.estado.toUpperCase()}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="panel-body">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem', alignItems: 'center' }}>
+              <div className="form-group">
+                <label className="form-label">CAJA EN BANCO DE EMPAQUE</label>
                 <select
-                  value={nuevoTipoCajaId}
-                  onChange={(e) => setNuevoTipoCajaId(Number(e.target.value))}
-                  style={{ minWidth: '300px' }}
+                  className="form-select"
+                  value={cajaSeleccionadaId}
+                  onChange={(e) => setCajaSeleccionadaId(Number(e.target.value))}
                 >
-                  {CATALOGO_CAJAS.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.tipo_caja} (Capacidad: {cat.capacidad_maxima} piezas)
+                  {cajas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.codigo_caja} - {c.cliente_nombre} // {c.modelo_nombre} ({c.color_nombre}) [{c.piezas_actuales || 0}/{c.capacidad}] - {c.estado}
                     </option>
                   ))}
                 </select>
-                <button type="button" className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleCrearNuevaCaja}>
-                  <Icon name="check" size="16px" />
-                  Confirmar Apertura de Caja
-                </button>
               </div>
-            </div>
-          )}
 
-          {/* Ficha técnica y telemetría de la caja activa */}
-          {cajaActiva && (
-            <div
-              style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #233145',
-                padding: '16px',
-                borderRadius: '2px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                <div>
-                  <span style={{ fontSize: '11px', color: '#8493a8', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
-                    Contenedor Seleccionado:
-                  </span>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '20px', fontWeight: 700, color: '#f1f5f9' }}>
-                    {cajaActiva.codigo_caja}{' '}
-                    <span style={{ fontSize: '13px', color: '#38bdf8' }}>({catalogoActivo?.tipo_caja})</span>
+              {cajaActual && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--gray-300)' }}>
+                      CLIENTE: <strong style={{ color: '#fff' }}>{cajaActual.cliente_nombre}</strong> | MODELO:{' '}
+                      <strong style={{ color: 'var(--accent)' }}>{cajaActual.modelo_nombre}</strong> | COLOR:{' '}
+                      <strong style={{ color: '#fff' }}>{cajaActual.color_nombre}</strong>
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800 }}>{porcentaje}% LLENA</span>
+                  </div>
+                  {/* BARRA INDUSTRIAL DE PROGRESO */}
+                  <div style={{ height: '10px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${porcentaje}%`,
+                        background: porcentaje === 100 ? 'var(--ok)' : 'var(--accent)',
+                        transition: 'width 0.3s ease',
+                      }}
+                    />
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <span className={`badge ${cajaActiva.estado === 'Cerrada' ? 'badge-danger' : 'badge-ok'}`}>
-                    ESTADO: {cajaActiva.estado.toUpperCase()}
+        {/* WORK AREA: ESCANEO Y ACCIONES */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
+          {/* TERMINAL DE ESCANEO DE SERIE */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">ESCANEO DE PIEZA A EMPACAR (RN-01, RN-05, RN-06)</span>
+              <span className="badge badge-accent">BARCODE_SCAN</span>
+            </div>
+            <div className="panel-body">
+              {cajaActual?.estado === 'Cerrada' ? (
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid var(--dark-500)' }}>
+                  <span className="badge badge-danger" style={{ fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+                    CAJA CERRADA Y SELLADA
                   </span>
-                  <button
-                    type="button"
-                    className="btn btn-warning"
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                    onClick={handleCerrarCaja}
-                    disabled={cajaActiva.estado === 'Cerrada' || cantidadActual === 0}
-                  >
-                    <Icon name="lock" size="16px" />
-                    Cerrar y Sellar Caja
+                  <p style={{ color: 'var(--gray-300)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    No se admiten nuevas unidades en esta caja a menos que el Supervisor de Almacén autorice su reapertura formal.
+                  </p>
+                  <button onClick={() => setModalReapertura(true)} className="btn btn-carbon">
+                    SOLICITAR REAPERTURA DE CAJA
                   </button>
                 </div>
-              </div>
+              ) : (
+                <form onSubmit={handleEmpacar} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">ESCANEAR NÚMERO DE SERIE DE LA UNIDAD</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej. NS-2026-0001"
+                        className="form-input"
+                        style={{ flex: 1, fontSize: '1.1rem', fontWeight: 800 }}
+                        value={serieInput}
+                        onChange={(e) => setSerieInput(e.target.value.toUpperCase())}
+                      />
+                      <select
+                        className="form-select"
+                        style={{ width: '180px' }}
+                        value={serieInput}
+                        onChange={(e) => setSerieInput(e.target.value)}
+                      >
+                        <option value="">-- Rápidas libres --</option>
+                        {unidades
+                          .filter((u) => !u.id_caja && u.id_estado_calidad === 1)
+                          .map((u) => (
+                            <option key={u.id} value={u.numero_serie}>
+                              {u.numero_serie} ({u.modelo} - {u.color})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--gray-300)', marginTop: '0.2rem' }}>
+                      * El sistema valida automáticamente que la pieza esté Aprobada por Calidad y que coincida en Modelo y Color con la caja.
+                    </span>
+                  </div>
 
-              {/* Barra de capacidad */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px', fontFamily: 'var(--font-mono)' }}>
-                  <span style={{ color: '#8493a8' }}>CAPACIDAD EMPACADA</span>
-                  <strong style={{ color: cajaLlena ? '#10b981' : '#38bdf8' }}>
-                    {cantidadActual} / {capacidadMaxima} PZAS ({porcentajeLlenado}%)
-                  </strong>
-                </div>
-                <div className="progress-track" style={{ height: '10px' }}>
-                  <div
-                    className={`progress-fill ${cajaLlena ? 'success' : ''}`}
-                    style={{ width: `${porcentajeLlenado}%` }}
-                  />
-                </div>
-              </div>
+                  <button type="submit" className="btn btn-yellow" style={{ height: '3.2rem', fontSize: '0.95rem' }}>
+                    EMPACAR EN CAJA ({ocupacion + 1} DE {capacidad})
+                  </button>
+
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                    <button
+                      type="button"
+                      onClick={handleCerrar}
+                      disabled={ocupacion === 0}
+                      className="btn btn-carbon"
+                      style={{ flex: 1 }}
+                    >
+                      CERRAR Y SELLAR CAJA
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModalReapertura(true)}
+                      className="btn btn-outline"
+                    >
+                      REAPERTURA
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* CONTENIDO DE LA CAJA (SLOTS) */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">CONTENIDO DE LA CAJA ({cajaActual?.codigo_caja})</span>
+              <span className="badge badge-accent">{detallesDeCaja.length} PZAS ADENTRO</span>
+            </div>
+            <div className="panel-body" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+              {detallesDeCaja.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem 0', fontSize: '0.85rem' }}>
+                  [CAJA VACÍA - LISTA PARA PRIMER SLOT]
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {detallesDeCaja.map((det) => (
+                    <div
+                      key={det.id}
+                      style={{
+                        background: 'var(--dark-700)',
+                        border: '1px solid var(--dark-500)',
+                        padding: '0.6rem 0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span
+                          style={{
+                            background: 'var(--accent)',
+                            color: 'var(--dark-900)',
+                            fontFamily: 'var(--font-mono)',
+                            fontWeight: 800,
+                            padding: '0.1rem 0.4rem',
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          SLOT {det.slot}
+                        </span>
+                        <div>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#fff' }}>
+                            {det.numero_serie}
+                          </span>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--gray-300)' }}>{det.fecha_empaque}</div>
+                        </div>
+                      </div>
+
+                      {cajaActual?.estado === 'Abierta' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSerieRetirar(det.numero_serie);
+                            setModalRetiro(true);
+                          }}
+                          className="btn btn-outline"
+                          style={{ height: '1.8rem', padding: '0 0.5rem', fontSize: '0.65rem' }}
+                        >
+                          RETIRAR
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 2. ESCANEO PARA ASIGNACIÓN A CAJA */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="qr_code_scanner" size="18px" color="#38bdf8" />
-            Empacar Unidad (Lectura de Pieza Aprobada)
-          </h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#8493a8' }}>
-            UPDATE unidades.id_caja
-          </span>
-        </div>
-
-        <div className="panel-body">
-          {/* Piezas sueltas en planta listas para empacar */}
-          {piezasListasParaEmpaque.length > 0 && (
-            <div
-              style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #28374d',
-                padding: '10px 14px',
-                borderRadius: '2px',
-                marginBottom: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                flexWrap: 'wrap',
-              }}
-            >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981', fontFamily: 'var(--font-mono)' }}>
-                PIEZAS APROBADAS ESPERANDO CAJA ({piezasListasParaEmpaque.length}):
+      {/* MODAL: APERTURA DE NUEVA CAJA */}
+      {modalNuevaCaja && (
+        <div className="modal-overlay">
+          <div className="modal-content tex-carbon">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <span className="station-title" style={{ fontSize: '1.2rem' }}>
+                APERTURA DE NUEVA CAJA (P-21)
               </span>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {piezasListasParaEmpaque.map((u) => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    className="btn"
-                    style={{
-                      fontSize: '11px',
-                      padding: '3px 8px',
-                      backgroundColor: inputSerial === u.numero_serie ? '#0284c7' : '#1c283a',
-                      borderColor: inputSerial === u.numero_serie ? '#38bdf8' : '#2b3d56',
-                      color: '#ffffff',
-                    }}
-                    onClick={() => setInputSerial(u.numero_serie)}
-                  >
-                    {u.numero_serie}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleEmpacar} style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '600px' }}>
-            <label htmlFor="input-serial-pack" style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase' }}>
-              Número de Serie a Empacar:
-            </label>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <input
-                id="input-serial-pack"
-                type="text"
-                value={inputSerial}
-                onChange={(e) => setInputSerial(e.target.value)}
-                placeholder="Escanee serie con dictamen APROBADA"
-                disabled={cajaActiva?.estado === 'Cerrada' || cajaLlena}
-                className="scanner-input"
-                style={{ flex: 1 }}
-              />
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={cajaActiva?.estado === 'Cerrada' || cajaLlena}
-                style={{ padding: '0 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Icon name="archive" size="16px" />
-                Empacar
+              <button onClick={() => setModalNuevaCaja(false)} className="btn btn-outline" style={{ height: '2rem' }}>
+                CERRAR
               </button>
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
-              Solo unidades formalmente dictaminadas como <strong>Aprobada</strong> en Calidad pueden ingresar a la caja.
+            <form onSubmit={handleCrearCaja} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label">CLIENTE DESTINO</label>
+                <select
+                  className="form-select"
+                  value={nuevoClienteId}
+                  onChange={(e) => setNuevoClienteId(Number(e.target.value))}
+                >
+                  {CATALOGO_CLIENTES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre_cliente} ({c.permite_mezcla_colores ? 'Permite mezcla' : 'Sin mezcla'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">MODELO A EMPACAR</label>
+                  <select
+                    className="form-select"
+                    value={nuevoModeloId}
+                    onChange={(e) => setNuevoModeloId(Number(e.target.value))}
+                  >
+                    {CATALOGO_MODELOS.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nombre_modelo} (Cap: {m.capacidad_caja} pzas)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">COLOR OFICIAL</label>
+                  <select
+                    className="form-select"
+                    value={nuevoColorId}
+                    onChange={(e) => setNuevoColorId(Number(e.target.value))}
+                  >
+                    {CATALOGO_COLORES.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre_color}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button type="button" onClick={() => setModalNuevaCaja(false)} className="btn btn-outline">
+                  CANCELAR
+                </button>
+                <button type="submit" className="btn btn-yellow">
+                  ABRIR CAJA
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: SOLICITUD DE REAPERTURA */}
+      {modalReapertura && (
+        <div className="modal-overlay">
+          <div className="modal-content tex-carbon">
+            <span className="station-title" style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'block' }}>
+              SOLICITAR REAPERTURA DE CAJA SELLADA (RN-09)
             </span>
-          </form>
-        </div>
-      </div>
-
-      {/* 3. CONTENIDO ACTUAL DE LA CAJA */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="inventory" size="18px" color="#38bdf8" />
-            Piezas dentro de {cajaActiva?.codigo_caja} ({cantidadActual} Piezas)
-          </h2>
-          <span className="badge badge-neutral">Trazabilidad de Contenedor</span>
-        </div>
-        <div className="panel-body" style={{ padding: 0 }}>
-          <div className="table-wrapper" style={{ border: 'none' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '60px' }}>Slot</th>
-                  <th>N° de Serie</th>
-                  <th>Modelo</th>
-                  <th>Color</th>
-                  <th>Estado Calidad</th>
-                </tr>
-              </thead>
-              <tbody>
-                {unidadesEnCajaActiva.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', color: '#64748b', padding: '16px' }}>
-                      (La caja se encuentra vacía. Escanee una unidad para comenzar el llenado).
-                    </td>
-                  </tr>
-                ) : (
-                  unidadesEnCajaActiva.map((u, idx) => (
-                    <tr key={u.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>#{idx + 1}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
-                        {u.numero_serie}
-                      </td>
-                      <td>{u.modelo}</td>
-                      <td>{u.color}</td>
-                      <td>
-                        <span className="badge badge-ok">Aprobada</span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label">MOTIVO / JUSTIFICACIÓN DE AUDITORÍA</label>
+              <textarea
+                rows={4}
+                required
+                placeholder="Indique la justificación para reabrir esta caja ya sellada"
+                className="form-textarea"
+                value={motivoReapertura}
+                onChange={(e) => setMotivoReapertura(e.target.value)}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button onClick={() => setModalReapertura(false)} className="btn btn-outline">
+                CANCELAR
+              </button>
+              <button onClick={handleSolicitarReapertura} className="btn btn-yellow">
+                ENVIAR SOLICITUD A SUPERVISOR
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 4. BITÁCORA DE MOVIMIENTOS DE EMPAQUE */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2>
-            <Icon name="history" size="18px" color="#38bdf8" />
-            Bitácora de Empaque (historial_movimientos)
-          </h2>
-          <span className="badge badge-neutral">{movimientosEmpaque.length} Eventos</span>
-        </div>
-        <div className="panel-body" style={{ padding: 0 }}>
-          <div className="table-wrapper" style={{ border: 'none' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '130px' }}>Hora</th>
-                  <th>Evento Operativo</th>
-                  <th>Responsable</th>
-                </tr>
-              </thead>
-              <tbody>
-                {movimientosEmpaque.map((m) => (
-                  <tr key={m.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{m.fecha}</td>
-                    <td>{m.evento}</td>
-                    <td style={{ fontSize: '11px', color: '#cbd5e1' }}>{m.usuario}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* MODAL: RETIRO DE UNIDAD */}
+      {modalRetiro && (
+        <div className="modal-overlay">
+          <div className="modal-content tex-carbon">
+            <span className="station-title" style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'block' }}>
+              RETIRAR UNIDAD DE LA CAJA: {serieRetirar}
+            </span>
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label">MOTIVO DEL RETIRO DE LA UNIDAD</label>
+              <textarea
+                rows={3}
+                required
+                placeholder="Motivo formal de extracción de la pieza empacada"
+                className="form-textarea"
+                value={motivoRetiro}
+                onChange={(e) => setMotivoRetiro(e.target.value)}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button onClick={() => setModalRetiro(false)} className="btn btn-outline">
+                CANCELAR
+              </button>
+              <button onClick={handleRetirarUnidad} className="btn btn-danger">
+                CONFIRMAR RETIRO DE SERIE
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
-};
-
-export default EmpaqueStation;
+}
