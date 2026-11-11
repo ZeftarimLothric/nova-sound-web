@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePlanta } from '../context/PlantaContext';
 import Icon from '../components/common/Icon';
+import LogoBocina from '../components/common/LogoBocina';
 
 interface CredencialPrueba {
   rol: string;
@@ -12,12 +13,35 @@ interface CredencialPrueba {
 }
 
 const ACCESOS_RAPIDOS: CredencialPrueba[] = [
-  { rol: 'Administrador', login: 'admin1', pass: 'hash680', nombre: 'Marcela Juárez', nomina: 'EMP-005', badgeClass: 'badge-ok' },
-  { rol: 'Inspector Calidad', login: 'inspector1', pass: 'hash123', nombre: 'Juan Pérez', nomina: 'EMP-001', badgeClass: 'badge-info' },
-  { rol: 'Operador Línea', login: 'operador1', pass: 'hash456', nombre: 'Carlos Hernández', nomina: 'EMP-002', badgeClass: 'badge-warn' },
+  { rol: 'Administrador', login: 'admin1', pass: 'hash680', nombre: 'Marcela Juárez', nomina: 'EMP-005', badgeClass: 'badge-neutral' },
+  { rol: 'Inspector Calidad', login: 'inspector1', pass: 'hash123', nombre: 'Juan Pérez', nomina: 'EMP-001', badgeClass: 'badge-neutral' },
+  { rol: 'Operador Línea', login: 'operador1', pass: 'hash456', nombre: 'Carlos Hernández', nomina: 'EMP-002', badgeClass: 'badge-neutral' },
   { rol: 'Supervisor', login: 'supervisor1', pass: 'hash789', nombre: 'Fernanda Gómez', nomina: 'EMP-003', badgeClass: 'badge-neutral' },
-  { rol: 'Gerente Planta', login: 'gerente1', pass: 'hash024', nombre: 'Eduardo Díaz', nomina: 'EMP-004', badgeClass: 'badge-danger' },
+  { rol: 'Gerente Planta', login: 'gerente1', pass: 'hash024', nombre: 'Eduardo Díaz', nomina: 'EMP-004', badgeClass: 'badge-neutral' },
 ];
+
+// Opción 2: gris claro + azul acero. Diseño plano, sin brillos.
+const PAL = {
+  accent: '#2b6cb0',
+  accentSoftBg: 'rgba(43, 108, 176, 0.10)',
+  cardBg: '#ffffff',
+  cardBgElevated: '#f5f7f9',
+  inputBg: '#ffffff',
+  border: '#cfd6dd',
+  borderSoft: '#dde3e8',
+  textStrong: '#1f2933',
+  textMuted: '#667085',
+  textDim: '#8a94a3',
+  success: '#2f9e44',
+};
+
+const getIniciales = (nombre: string) =>
+  nombre
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
 
 export const Login: React.FC = () => {
   const { iniciarSesion } = usePlanta();
@@ -54,133 +78,168 @@ export const Login: React.FC = () => {
     setErrorMensaje(null);
   };
 
+  const inputBaseStyle: React.CSSProperties = {
+    width: '100%',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '13px',
+    backgroundColor: PAL.inputBg,
+    border: `1px solid ${PAL.border}`,
+    borderRadius: '4px',
+    color: PAL.textStrong,
+    transition: 'border-color 0.15s ease',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '11px',
+    fontWeight: 600,
+    color: PAL.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: '0.4px',
+    marginBottom: '4px',
+    fontFamily: 'var(--font-sans)',
+  };
+
+  const focusAccent = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.currentTarget.style.borderColor = PAL.accent;
+  };
+  const blurAccent = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.currentTarget.style.borderColor = PAL.border;
+  };
+
   return (
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#090d14',
+        backgroundColor: '#e9ecef',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '24px 16px',
+        padding: '12px 16px',
         position: 'relative',
       }}
     >
-      {/* Fondo técnico con patrón de rejilla industrial sutil */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            'radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 60%), linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)',
-          backgroundSize: '100% 100%, 32px 32px, 32px 32px',
-          pointerEvents: 'none',
-        }}
-      />
-
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '480px',
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        {/* Panel del Login */}
-        <div className="panel" style={{ boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)' }}>
-          {/* Cabecera Técnica de Terminal */}
-          <div
-            className="panel-header"
-            style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid #1f2c3f',
-              backgroundColor: '#0e1520',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '10px',
-                  height: '10px',
-                  backgroundColor: '#10b981',
-                  borderRadius: '1px',
-                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
-                }}
-              />
-              <div>
-                <h1
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    letterSpacing: '1px',
-                    color: '#f8fafc',
-                    margin: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  NOVA SOUND
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      color: '#38bdf8',
-                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                      padding: '1px 6px',
-                      border: '1px solid rgba(56, 189, 248, 0.3)',
-                      borderRadius: '2px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    HMI / MES
-                  </span>
-                </h1>
-                <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
-                  TERMINAL DE ACCESO A PISO · AUTENTICACIÓN NEON
-                </div>
+      <div className="login-shell" style={{ position: 'relative', zIndex: 1 }}>
+        {/* ===== Lado izquierdo: identidad de marca / línea de producción ===== */}
+        <aside className="login-hero">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <LogoBocina size={40} />
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 700, letterSpacing: '0.5px', color: '#ffffff' }}>
+                NOVA SOUND
               </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-              <Icon name="cloud_done" size={16} />
-              <span>ONLINE</span>
+              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.68)', fontFamily: 'var(--font-sans)', marginTop: '2px' }}>
+                Manufactura de bocinas Bluetooth
+              </div>
             </div>
           </div>
 
-          <div className="panel-body" style={{ padding: '24px 20px' }}>
+          {/* Anillos de cono de bocina (decorativo) */}
+          <div className="login-hero-art" style={{ display: 'flex', justifyContent: 'center' }} aria-hidden="true">
+            <svg width="170" height="170" viewBox="0 0 230 230">
+              <circle cx="115" cy="115" r="108" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
+              <circle cx="115" cy="115" r="108" fill="none" stroke="#7fb2ea" strokeWidth="3" strokeDasharray="120 560" strokeLinecap="round" />
+              <circle cx="115" cy="115" r="82" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.5" />
+              <circle cx="115" cy="115" r="58" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+              <circle cx="115" cy="115" r="36" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+              <circle cx="115" cy="115" r="12" fill="#7fb2ea" />
+            </svg>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.68)', textTransform: 'uppercase', letterSpacing: '0.6px', fontFamily: 'var(--font-sans)', marginBottom: '8px' }}>
+              Familias en producción
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {['Mini', 'Pro', 'Sport', 'Max'].map((m) => (
+                <span
+                  key={m}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.35)',
+                    borderRadius: '3px',
+                    padding: '3px 10px',
+                  }}
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* ===== Lado derecho: formulario de acceso ===== */}
+        <div className="login-form-side">
+          {/* Cabecera del formulario */}
+          <div
+            style={{
+              padding: '12px 24px 10px',
+              borderBottom: `1px solid ${PAL.borderSoft}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <h1
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '17px',
+                  fontWeight: 700,
+                  color: PAL.textStrong,
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                Iniciar Sesión
+                <span
+                  style={{
+                    fontSize: '10px',
+                    color: '#ffffff',
+                    backgroundColor: PAL.accent,
+                    padding: '1px 7px',
+                    borderRadius: '3px',
+                    fontWeight: 700,
+                  }}
+                >
+                  HMI / MES
+                </span>
+              </h1>
+              <div style={{ fontSize: '11.5px', color: PAL.textDim, fontFamily: 'var(--font-sans)', marginTop: '2px' }}>
+                Ingresa con tu nómina para abrir turno
+              </div>
+            </div>
+
+            <div style={{ color: PAL.success, fontSize: '11px', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: PAL.success,  }} />
+              ONLINE
+            </div>
+          </div>
+
+          <div style={{ padding: '14px 24px', flex: 1 }}>
             {errorMensaje && (
-              <div className="alert-banner alert-banner-error" style={{ marginBottom: '18px' }}>
+              <div className="alert-banner alert-banner-error" style={{ marginBottom: '10px', borderRadius: '4px' }}>
                 <Icon name="error" size={18} color="#ef4444" />
                 <span style={{ flex: 1 }}>{errorMensaje}</span>
                 <button
                   type="button"
                   onClick={() => setErrorMensaje(null)}
-                  style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0 }}
+                  style={{ background: 'transparent', border: 'none', color: '#d64545', cursor: 'pointer', padding: 0 }}
                 >
                   <Icon name="close" size={16} />
                 </button>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {/* Campo: Nómina / Usuario */}
               <div>
-                <label
-                  htmlFor="login-input"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#94a3b8',
-                    textTransform: 'uppercase',
-                    marginBottom: '6px',
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                >
-                  <Icon name="badge" size={16} color="#38bdf8" />
+                <label htmlFor="login-input" style={labelStyle}>
                   Nómina o Usuario de Acceso:
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -189,15 +248,12 @@ export const Login: React.FC = () => {
                     type="text"
                     value={loginInput}
                     onChange={(e) => setLoginInput(e.target.value)}
+                    onFocus={focusAccent}
+                    onBlur={blurAccent}
                     placeholder="Ej. EMP-005 o admin1"
                     autoComplete="username"
                     autoFocus
-                    style={{
-                      width: '100%',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '13px',
-                      paddingLeft: '34px',
-                    }}
+                    style={{ ...inputBaseStyle, paddingLeft: '34px', padding: '7px 12px 7px 34px' }}
                   />
                   <span
                     style={{
@@ -205,7 +261,7 @@ export const Login: React.FC = () => {
                       left: '10px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      color: '#475569',
+                      color: PAL.textDim,
                       display: 'flex',
                       pointerEvents: 'none',
                     }}
@@ -217,21 +273,7 @@ export const Login: React.FC = () => {
 
               {/* Campo: Contraseña / PIN */}
               <div>
-                <label
-                  htmlFor="pass-input"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#94a3b8',
-                    textTransform: 'uppercase',
-                    marginBottom: '6px',
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                >
-                  <Icon name="key" size={16} color="#38bdf8" />
+                <label htmlFor="pass-input" style={labelStyle}>
                   Contraseña o Hash de Operador:
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -240,15 +282,11 @@ export const Login: React.FC = () => {
                     type={mostrarPassword ? 'text' : 'password'}
                     value={contrasenaInput}
                     onChange={(e) => setContrasenaInput(e.target.value)}
+                    onFocus={focusAccent}
+                    onBlur={blurAccent}
                     placeholder="Ingrese su clave (ej. hash680 o admin1)"
                     autoComplete="current-password"
-                    style={{
-                      width: '100%',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '13px',
-                      paddingLeft: '34px',
-                      paddingRight: '38px',
-                    }}
+                    style={{ ...inputBaseStyle, padding: '7px 38px 7px 34px' }}
                   />
                   <span
                     style={{
@@ -256,7 +294,7 @@ export const Login: React.FC = () => {
                       left: '10px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      color: '#475569',
+                      color: PAL.textDim,
                       display: 'flex',
                       pointerEvents: 'none',
                     }}
@@ -273,7 +311,7 @@ export const Login: React.FC = () => {
                       transform: 'translateY(-50%)',
                       background: 'transparent',
                       border: 'none',
-                      color: '#64748b',
+                      color: PAL.textMuted,
                       cursor: 'pointer',
                       padding: '4px',
                       display: 'flex',
@@ -288,28 +326,16 @@ export const Login: React.FC = () => {
               {/* Selección de Línea y Turno de Piso */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label
-                    htmlFor="linea-select"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#94a3b8',
-                      textTransform: 'uppercase',
-                      marginBottom: '6px',
-                      fontFamily: 'var(--font-mono)',
-                    }}
-                  >
-                    <Icon name="precision_manufacturing" size={15} color="#f59e0b" />
+                  <label htmlFor="linea-select" style={labelStyle}>
                     Línea Asignada:
                   </label>
                   <select
                     id="linea-select"
                     value={lineaId}
                     onChange={(e) => setLineaId(Number(e.target.value))}
-                    style={{ width: '100%', fontFamily: 'var(--font-mono)' }}
+                    onFocus={focusAccent}
+                    onBlur={blurAccent}
+                    style={{ ...inputBaseStyle, padding: '7px 12px' }}
                   >
                     <option value={1}>L1 (Mini / Pro)</option>
                     <option value={2}>L2 (Sport / Mini)</option>
@@ -318,28 +344,16 @@ export const Login: React.FC = () => {
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="turno-select"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#94a3b8',
-                      textTransform: 'uppercase',
-                      marginBottom: '6px',
-                      fontFamily: 'var(--font-mono)',
-                    }}
-                  >
-                    <Icon name="schedule" size={15} color="#38bdf8" />
+                  <label htmlFor="turno-select" style={labelStyle}>
                     Turno Activo:
                   </label>
                   <select
                     id="turno-select"
                     value={turnoId}
                     onChange={(e) => setTurnoId(Number(e.target.value))}
-                    style={{ width: '100%', fontFamily: 'var(--font-mono)' }}
+                    onFocus={focusAccent}
+                    onBlur={blurAccent}
+                    style={{ ...inputBaseStyle, padding: '7px 12px' }}
                   >
                     <option value={1}>Mañana (06:00 - 14:00)</option>
                     <option value={2}>Tarde (14:00 - 22:00)</option>
@@ -351,83 +365,104 @@ export const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={cargando}
-                className="btn btn-primary"
                 style={{
                   width: '100%',
-                  padding: '12px',
-                  fontFamily: 'var(--font-mono)',
+                  padding: '9px',
+                  fontFamily: 'var(--font-sans)',
                   fontSize: '13px',
                   fontWeight: 700,
-                  letterSpacing: '0.5px',
+                  letterSpacing: '0.3px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  marginTop: '8px',
+                  marginTop: '2px',
+                  backgroundColor: PAL.accent,
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  
+                  cursor: cargando ? 'default' : 'pointer',
+                  opacity: cargando ? 0.7 : 1,
                 }}
               >
                 <Icon name={cargando ? 'sync' : 'login'} size={18} className={cargando ? 'spin' : ''} />
-                {cargando ? 'AUTENTICANDO CREDENCIALES...' : 'INICIAR SESIÓN Y ENTRAR A PISO'}
+                {cargando ? 'Autenticando credenciales...' : 'Iniciar sesión y entrar a piso'}
               </button>
             </form>
 
             {/* Accesos Rápidos para Pruebas / Calificación Escolar */}
-            <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid #1a2535' }}>
+            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: `1px solid ${PAL.borderSoft}` }}>
               <div
                 style={{
                   fontSize: '11px',
-                  color: '#64748b',
-                  fontFamily: 'var(--font-mono)',
+                  color: PAL.textDim,
+                  fontFamily: 'var(--font-sans)',
                   textTransform: 'uppercase',
-                  marginBottom: '10px',
+                  letterSpacing: '0.4px',
+                  marginBottom: '6px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                 }}
               >
-                <Icon name="touch_app" size={14} color="#38bdf8" />
-                Acceso Rápido para Pruebas y Demostración:
+                <Icon name="touch_app" size={14} color={PAL.accent} />
+                Acceso Rápido para Pruebas y Demostración
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                 {ACCESOS_RAPIDOS.map((acc) => (
                   <button
                     key={acc.login}
                     type="button"
+                    title={`Usuario: ${acc.login}`}
                     onClick={() => aplicarAccesoRapido(acc)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
-                      backgroundColor: '#121a26',
-                      border: '1px solid #1e2a3b',
-                      padding: '7px 12px',
-                      borderRadius: '2px',
+                      justifyContent: 'flex-start',
+                      gap: '8px',
+                      backgroundColor: '#ffffff',
+                      border: `1px solid ${PAL.borderSoft}`,
+                      padding: '5px 8px',
                       cursor: 'pointer',
-                      color: '#cbd5e1',
-                      fontSize: '12px',
-                      fontFamily: 'var(--font-mono)',
                       textAlign: 'left',
-                      transition: 'all 0.15s ease',
+                      transition: 'border-color 0.15s ease, background-color 0.15s ease',
+                      borderRadius: '4px',
+                      minWidth: 0,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#38bdf8';
-                      e.currentTarget.style.backgroundColor = '#172233';
+                      e.currentTarget.style.borderColor = PAL.accent;
+                      e.currentTarget.style.backgroundColor = '#f5f7f9';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#1e2a3b';
-                      e.currentTarget.style.backgroundColor = '#121a26';
+                      e.currentTarget.style.borderColor = PAL.borderSoft;
+                      e.currentTarget.style.backgroundColor = '#ffffff';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className={`badge ${acc.badgeClass}`} style={{ fontSize: '9px', padding: '1px 5px' }}>
-                        {acc.rol}
-                      </span>
-                      <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{acc.nombre}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '11px' }}>
-                      <code>{acc.login}</code>
-                      <Icon name="arrow_forward" size={14} />
+                    <span
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        backgroundColor: PAL.accentSoftBg,
+                        color: PAL.accent,
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: 'var(--font-sans)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {getIniciales(acc.nombre)}
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ color: PAL.textStrong, fontWeight: 600, fontSize: '12px', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {acc.nombre}
+                      </div>
+                      <div style={{ color: PAL.textDim, fontSize: '10px', fontFamily: 'var(--font-sans)' }}>{acc.rol}</div>
                     </div>
                   </button>
                 ))}
@@ -438,19 +473,19 @@ export const Login: React.FC = () => {
           {/* Pie de terminal */}
           <div
             style={{
-              padding: '10px 20px',
-              backgroundColor: '#0a0e15',
-              borderTop: '1px solid #16202e',
+              padding: '7px 24px',
+              backgroundColor: PAL.cardBgElevated,
+              borderTop: `1px solid ${PAL.borderSoft}`,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               fontSize: '10px',
-              fontFamily: 'var(--font-mono)',
-              color: '#475569',
+              fontFamily: 'var(--font-sans)',
+              color: PAL.textDim,
             }}
           >
-            <span>SISTEMA MES / SCADA V2.4</span>
-            <span>POSTGRESQL (NEON.TECH)</span>
+            <span>Sistema MES / SCADA v2.4</span>
+            <span>PostgreSQL (Neon.tech)</span>
           </div>
         </div>
       </div>

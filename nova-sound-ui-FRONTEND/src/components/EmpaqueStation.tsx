@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { EstadosCalidadEnum } from '../types/database';
 import { usePlanta, CATALOGO_CAJAS } from '../context/PlantaContext';
-import Icon from './common/Icon';
+import Icon from './common/LogoBocina';
 
 export const EmpaqueStation: React.FC = () => {
   const {
@@ -100,7 +100,7 @@ export const EmpaqueStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="inventory_2" color="#f59e0b" size="20px" />
+            <Icon name="inventory_2" color="#b7791f" size="20px" />
             Estación de Empaque & Embalaje · Línea {sesion.linea.nombre_linea}
           </h2>
           <span className="badge badge-info">CONTROL DE LOTES Y CONTENEDORES</span>
@@ -135,7 +135,7 @@ export const EmpaqueStation: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '320px' }}>
-              <label htmlFor="select-caja" style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase' }}>
+              <label htmlFor="select-caja" style={{ fontSize: '12px', fontWeight: 700, color: '#1f2933', textTransform: 'uppercase' }}>
                 Caja Activa:
               </label>
               <select
@@ -174,8 +174,8 @@ export const EmpaqueStation: React.FC = () => {
           {mostrarCrearCaja && (
             <div
               style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #28374d',
+                backgroundColor: '#f5f7f9',
+                border: '1px solid #cfd6dd',
                 padding: '14px',
                 borderRadius: '2px',
                 marginBottom: '16px',
@@ -184,8 +184,8 @@ export const EmpaqueStation: React.FC = () => {
                 gap: '10px',
               }}
             >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="add_circle" size="16px" color="#38bdf8" />
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#2b6cb0', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Icon name="add_circle" size="16px" color="#2b6cb0" />
                 Aperturar Nuevo Contenedor (cat_cajas)
               </span>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -212,8 +212,8 @@ export const EmpaqueStation: React.FC = () => {
           {cajaActiva && (
             <div
               style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #233145',
+                backgroundColor: '#f5f7f9',
+                border: '1px solid #cfd6dd',
                 padding: '16px',
                 borderRadius: '2px',
                 display: 'flex',
@@ -223,12 +223,12 @@ export const EmpaqueStation: React.FC = () => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
-                  <span style={{ fontSize: '11px', color: '#8493a8', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '11px', color: '#667085', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
                     Contenedor Seleccionado:
                   </span>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '20px', fontWeight: 700, color: '#f1f5f9' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '20px', fontWeight: 700, color: '#1f2933' }}>
                     {cajaActiva.codigo_caja}{' '}
-                    <span style={{ fontSize: '13px', color: '#38bdf8' }}>({catalogoActivo?.tipo_caja})</span>
+                    <span style={{ fontSize: '13px', color: '#2b6cb0' }}>({catalogoActivo?.tipo_caja})</span>
                   </div>
                 </div>
 
@@ -252,8 +252,8 @@ export const EmpaqueStation: React.FC = () => {
               {/* Barra de capacidad */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px', fontFamily: 'var(--font-mono)' }}>
-                  <span style={{ color: '#8493a8' }}>CAPACIDAD EMPACADA</span>
-                  <strong style={{ color: cajaLlena ? '#10b981' : '#38bdf8' }}>
+                  <span style={{ color: '#667085' }}>CAPACIDAD EMPACADA</span>
+                  <strong style={{ color: cajaLlena ? '#2f9e44' : '#2b6cb0' }}>
                     {cantidadActual} / {capacidadMaxima} PZAS ({porcentajeLlenado}%)
                   </strong>
                 </div>
@@ -273,10 +273,10 @@ export const EmpaqueStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="qr_code_scanner" size="18px" color="#38bdf8" />
+            <Icon name="qr_code_scanner" size="18px" color="#2b6cb0" />
             Empacar Unidad (Lectura de Pieza Aprobada)
           </h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#8493a8' }}>
+          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#667085' }}>
             UPDATE unidades.id_caja
           </span>
         </div>
@@ -286,8 +286,8 @@ export const EmpaqueStation: React.FC = () => {
           {piezasListasParaEmpaque.length > 0 && (
             <div
               style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #28374d',
+                backgroundColor: '#f5f7f9',
+                border: '1px solid #cfd6dd',
                 padding: '10px 14px',
                 borderRadius: '2px',
                 marginBottom: '16px',
@@ -297,7 +297,7 @@ export const EmpaqueStation: React.FC = () => {
                 flexWrap: 'wrap',
               }}
             >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#2f9e44', fontFamily: 'var(--font-mono)' }}>
                 PIEZAS APROBADAS ESPERANDO CAJA ({piezasListasParaEmpaque.length}):
               </span>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -309,8 +309,8 @@ export const EmpaqueStation: React.FC = () => {
                     style={{
                       fontSize: '11px',
                       padding: '3px 8px',
-                      backgroundColor: inputSerial === u.numero_serie ? '#0284c7' : '#1c283a',
-                      borderColor: inputSerial === u.numero_serie ? '#38bdf8' : '#2b3d56',
+                      backgroundColor: inputSerial === u.numero_serie ? '#2b6cb0' : '#e4e8ec',
+                      borderColor: inputSerial === u.numero_serie ? '#2b6cb0' : '#b8c2cc',
                       color: '#ffffff',
                     }}
                     onClick={() => setInputSerial(u.numero_serie)}
@@ -323,7 +323,7 @@ export const EmpaqueStation: React.FC = () => {
           )}
 
           <form onSubmit={handleEmpacar} style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '600px' }}>
-            <label htmlFor="input-serial-pack" style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase' }}>
+            <label htmlFor="input-serial-pack" style={{ fontSize: '12px', fontWeight: 700, color: '#1f2933', textTransform: 'uppercase' }}>
               Número de Serie a Empacar:
             </label>
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -347,7 +347,7 @@ export const EmpaqueStation: React.FC = () => {
                 Empacar
               </button>
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ fontSize: '11px', color: '#7b8794', fontFamily: 'var(--font-mono)' }}>
               Solo unidades formalmente dictaminadas como <strong>Aprobada</strong> en Calidad pueden ingresar a la caja.
             </span>
           </form>
@@ -358,7 +358,7 @@ export const EmpaqueStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="inventory" size="18px" color="#38bdf8" />
+            <Icon name="inventory" size="18px" color="#2b6cb0" />
             Piezas dentro de {cajaActiva?.codigo_caja} ({cantidadActual} Piezas)
           </h2>
           <span className="badge badge-neutral">Trazabilidad de Contenedor</span>
@@ -378,15 +378,15 @@ export const EmpaqueStation: React.FC = () => {
               <tbody>
                 {unidadesEnCajaActiva.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', color: '#64748b', padding: '16px' }}>
+                    <td colSpan={5} style={{ textAlign: 'center', color: '#7b8794', padding: '16px' }}>
                       (La caja se encuentra vacía. Escanee una unidad para comenzar el llenado).
                     </td>
                   </tr>
                 ) : (
                   unidadesEnCajaActiva.map((u, idx) => (
                     <tr key={u.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>#{idx + 1}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
+                      <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>#{idx + 1}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#2b6cb0' }}>
                         {u.numero_serie}
                       </td>
                       <td>{u.modelo}</td>
@@ -407,7 +407,7 @@ export const EmpaqueStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="history" size="18px" color="#38bdf8" />
+            <Icon name="history" size="18px" color="#2b6cb0" />
             Bitácora de Empaque (historial_movimientos)
           </h2>
           <span className="badge badge-neutral">{movimientosEmpaque.length} Eventos</span>
@@ -425,9 +425,9 @@ export const EmpaqueStation: React.FC = () => {
               <tbody>
                 {movimientosEmpaque.map((m) => (
                   <tr key={m.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{m.fecha}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>{m.fecha}</td>
                     <td>{m.evento}</td>
-                    <td style={{ fontSize: '11px', color: '#cbd5e1' }}>{m.usuario}</td>
+                    <td style={{ fontSize: '11px', color: '#475467' }}>{m.usuario}</td>
                   </tr>
                 ))}
               </tbody>

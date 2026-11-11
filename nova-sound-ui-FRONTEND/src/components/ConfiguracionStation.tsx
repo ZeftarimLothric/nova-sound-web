@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RolesEnum } from '../types/database';
 import { usePlanta } from '../context/PlantaContext';
-import Icon from './common/Icon';
+import Icon from './common/LogoBocina';
 
 interface UsuarioConfig {
   id: number;
@@ -199,7 +199,7 @@ export const ConfiguracionStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="settings" color="#f59e0b" size="20px" />
+            <Icon name="settings" color="#b7791f" size="20px" />
             Configuración del Sistema, Catálogos y Auditoría
           </h2>
           <span className="badge badge-info">ADMINISTRACIÓN GLOBAL</span>
@@ -262,7 +262,7 @@ export const ConfiguracionStation: React.FC = () => {
         <div className="panel">
           <div className="panel-header">
             <h2>
-              <Icon name="manage_accounts" size="18px" color="#38bdf8" />
+              <Icon name="manage_accounts" size="18px" color="#2b6cb0" />
               Cuentas de Acceso y Roles de Manufactura (usuarios / roles)
             </h2>
             <button
@@ -281,8 +281,8 @@ export const ConfiguracionStation: React.FC = () => {
               <form
                 onSubmit={handleCrearUsuario}
                 style={{
-                  backgroundColor: '#161f2c',
-                  border: '1px solid #28374d',
+                  backgroundColor: '#f5f7f9',
+                  border: '1px solid #cfd6dd',
                   padding: '16px',
                   borderRadius: '2px',
                   marginBottom: '16px',
@@ -367,7 +367,7 @@ export const ConfiguracionStation: React.FC = () => {
                     const rolNombre = ROLES_LISTA.find((r) => r.id === u.id_rol)?.nombre ?? 'Desconocido';
                     return (
                       <tr key={u.id}>
-                        <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>{u.nomina}</td>
+                        <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#2b6cb0' }}>{u.nomina}</td>
                         <td>{u.nombre_completo}</td>
                         <td style={{ fontFamily: 'var(--font-mono)' }}>{u.usuario_login}</td>
                         <td>{rolNombre}</td>
@@ -401,7 +401,7 @@ export const ConfiguracionStation: React.FC = () => {
         <div className="panel">
           <div className="panel-header">
             <h2>
-              <Icon name="tune" size="18px" color="#38bdf8" />
+              <Icon name="tune" size="18px" color="#2b6cb0" />
               Constantes y Parámetros Globales (parametros_sistema)
             </h2>
             <button className="btn btn-primary" type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleGuardarParametros}>
@@ -416,8 +416,8 @@ export const ConfiguracionStation: React.FC = () => {
                 <div
                   key={p.id}
                   style={{
-                    backgroundColor: '#161f2c',
-                    border: '1px solid #28374d',
+                    backgroundColor: '#f5f7f9',
+                    border: '1px solid #cfd6dd',
                     padding: '12px 16px',
                     borderRadius: '2px',
                     display: 'flex',
@@ -428,14 +428,14 @@ export const ConfiguracionStation: React.FC = () => {
                   }}
                 >
                   <div style={{ flex: 1, minWidth: '240px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#f8fafc', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#1f2933', fontFamily: 'var(--font-mono)' }}>
                       {p.clave}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#8493a8' }}>{p.descripcion}</div>
+                    <div style={{ fontSize: '12px', color: '#667085' }}>{p.descripcion}</div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <label htmlFor={`param-${p.id}`} style={{ color: '#38bdf8', textTransform: 'uppercase' }}>Valor:</label>
+                    <label htmlFor={`param-${p.id}`} style={{ color: '#2b6cb0', textTransform: 'uppercase' }}>Valor:</label>
                     <input
                       id={`param-${p.id}`}
                       type="number"
@@ -456,7 +456,7 @@ export const ConfiguracionStation: React.FC = () => {
         <div className="panel">
           <div className="panel-header">
             <h2>
-              <Icon name="receipt_long" size="18px" color="#38bdf8" />
+              <Icon name="receipt_long" size="18px" color="#2b6cb0" />
               Registro de Auditoría y Eventos de Planta (bitacora)
             </h2>
             <span className="badge badge-neutral">{bitacoraFiltrada.length} de {bitacora.length} eventos</span>
@@ -494,7 +494,7 @@ export const ConfiguracionStation: React.FC = () => {
                 <tbody>
                   {bitacoraFiltrada.map((item) => (
                     <tr key={item.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{item.fecha}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>{item.fecha}</td>
                       <td>
                         <span className="badge badge-info" style={{ fontSize: '10px' }}>
                           {item.modulo}
@@ -515,7 +515,7 @@ export const ConfiguracionStation: React.FC = () => {
         <div className="panel">
           <div className="panel-header">
             <h2>
-              <Icon name="backup" size="18px" color="#38bdf8" />
+              <Icon name="backup" size="18px" color="#2b6cb0" />
               Copias de Seguridad Físicas de la Base de Datos (respaldos_log)
             </h2>
             <button className="btn btn-primary" type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleEjecutarRespaldo}>
@@ -527,15 +527,15 @@ export const ConfiguracionStation: React.FC = () => {
           <div className="panel-body">
             <div
               style={{
-                backgroundColor: '#161f2c',
-                border: '1px solid #28374d',
+                backgroundColor: '#f5f7f9',
+                border: '1px solid #cfd6dd',
                 padding: '14px 16px',
                 borderRadius: '2px',
                 marginBottom: '16px',
               }}
             >
-              <strong style={{ color: '#f1f5f9' }}>Copia de Seguridad PostgreSQL (SSOT)</strong>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#8493a8' }}>
+              <strong style={{ color: '#1f2933' }}>Copia de Seguridad PostgreSQL (SSOT)</strong>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#667085' }}>
                 Genera un volcado completo de todas las tablas de producción: órdenes, trazabilidad de unidades, inspecciones de calidad, cajas y embarques.
               </p>
             </div>
@@ -552,8 +552,8 @@ export const ConfiguracionStation: React.FC = () => {
                 <tbody>
                   {respaldos.map((r) => (
                     <tr key={r.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{r.fecha_hora}</td>
-                      <td style={{ fontWeight: 600, color: '#38bdf8' }}>{r.usuario}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>{r.fecha_hora}</td>
+                      <td style={{ fontWeight: 600, color: '#2b6cb0' }}>{r.usuario}</td>
                       <td>
                         <span className={`badge ${r.exitoso ? 'badge-ok' : 'badge-danger'}`}>
                           {r.exitoso ? 'EXITOSO (200 OK)' : 'FALLIDO'}

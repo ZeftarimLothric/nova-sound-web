@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { usePlanta } from '../context/PlantaContext';
-import Icon from './common/Icon';
+import Icon from './common/LogoBocina';
 
 export const EnsambleStation: React.FC = () => {
   const { unidades, registrarUnidadEnsamble, sesion } = usePlanta();
@@ -37,7 +37,7 @@ export const EnsambleStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="precision_manufacturing" size={18} color="#38bdf8" />
+            <Icon name="precision_manufacturing" size={18} color="#2b6cb0" />
             Estación de Ensamble · Línea {sesion.linea.nombre_linea}
           </h2>
           <span className="badge badge-info">
@@ -52,25 +52,25 @@ export const EnsambleStation: React.FC = () => {
               alignItems: 'center',
               flexWrap: 'wrap',
               gap: '16px',
-              backgroundColor: '#161f2c',
-              border: '1px solid #233145',
+              backgroundColor: '#f5f7f9',
+              border: '1px solid #cfd6dd',
               padding: '14px 18px',
               borderRadius: '2px',
             }}
           >
             <div>
-              <div style={{ fontSize: '11px', color: '#8493a8', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '11px', color: '#667085', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
                 Objetivo del Turno ({sesion.turno.nombre_turno})
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 700, color: '#f1f5f9' }}>
-                {unidades.length} <span style={{ fontSize: '14px', color: '#64748b' }}>/ {metaTurno} PZAS</span>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 700, color: '#1f2933' }}>
+                {unidades.length} <span style={{ fontSize: '14px', color: '#7b8794' }}>/ {metaTurno} PZAS</span>
               </div>
             </div>
 
             <div style={{ flex: 1, minWidth: '220px', maxWidth: '360px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>
-                <span style={{ color: '#8493a8' }}>EFICIENCIA DE LÍNEA</span>
-                <span style={{ color: '#38bdf8', fontWeight: 700 }}>{progresoPct}%</span>
+                <span style={{ color: '#667085' }}>EFICIENCIA DE LÍNEA</span>
+                <span style={{ color: '#2b6cb0', fontWeight: 700 }}>{progresoPct}%</span>
               </div>
               <div className="progress-track" style={{ height: '10px' }}>
                 <div className="progress-fill" style={{ width: `${progresoPct}%` }} />
@@ -84,17 +84,17 @@ export const EnsambleStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="qr_code_scanner" size={18} color="#38bdf8" />
+            <Icon name="qr_code_scanner" size={18} color="#2b6cb0" />
             Registro de Unidad (Lectura de Código de Barras / QR)
           </h2>
-          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#8493a8' }}>
+          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#667085' }}>
             Operador: {sesion.usuario.nombre_completo}
           </span>
         </div>
         <div className="panel-body">
           {mensaje && (
             <div className={`alert-banner ${mensaje.tipo === 'ok' ? 'alert-banner-ok' : 'alert-banner-error'}`}>
-              <Icon name={mensaje.tipo === 'ok' ? 'check_circle' : 'error'} size={18} color={mensaje.tipo === 'ok' ? '#10b981' : '#ef4444'} />
+              <Icon name={mensaje.tipo === 'ok' ? 'check_circle' : 'error'} size={18} color={mensaje.tipo === 'ok' ? '#2f9e44' : '#d64545'} />
               <span style={{ flex: 1 }}>{mensaje.texto}</span>
               <button
                 type="button"
@@ -108,7 +108,7 @@ export const EnsambleStation: React.FC = () => {
 
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '600px' }}>
-              <label htmlFor="serial-input" style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <label htmlFor="serial-input" style={{ fontSize: '12px', fontWeight: 700, color: '#1f2933', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Número de Serie de Bocina:
               </label>
               <div style={{ display: 'flex', gap: '10px' }}>
@@ -127,7 +127,7 @@ export const EnsambleStation: React.FC = () => {
                   Registrar Pieza [↵]
                 </button>
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: '11px', color: '#7b8794', fontFamily: 'var(--font-mono)' }}>
                 Presione ENTER o dispare con la pistola lectora láser. Se asignará automáticamente a la Línea {sesion.linea.nombre_linea}.
               </span>
             </div>
@@ -139,7 +139,7 @@ export const EnsambleStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="history" size={18} color="#38bdf8" />
+            <Icon name="history" size={18} color="#2b6cb0" />
             Últimas Unidades Ensambladas en Turno Actual
           </h2>
           <span className="badge badge-neutral">{unidades.length} Registradas</span>
@@ -178,20 +178,20 @@ export const EnsambleStation: React.FC = () => {
 
                   return (
                     <tr key={u.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
+                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#2b6cb0' }}>
                         {u.numero_serie}
                       </td>
                       <td>{u.modelo}</td>
                       <td>{u.color}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>{u.fecha_ensamble}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>{u.fecha_ensamble}</td>
                       <td>
                         <span className={`badge ${badgeClass}`}>{estadoTxt}</span>
                       </td>
                       <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
                         {u.id_caja ? (
-                          <span style={{ color: '#10b981' }}>Caja #{u.id_caja}</span>
+                          <span style={{ color: '#2f9e44' }}>Caja #{u.id_caja}</span>
                         ) : (
-                          <span style={{ color: '#64748b' }}>Suelta en piso</span>
+                          <span style={{ color: '#7b8794' }}>Suelta en piso</span>
                         )}
                       </td>
                     </tr>

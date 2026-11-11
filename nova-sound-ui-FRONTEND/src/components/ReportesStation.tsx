@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { usePlanta } from '../context/PlantaContext';
 import { EstadosCalidadEnum } from '../types/database';
-import Icon from './common/Icon';
+import Icon from './common/LogoBocina';
 
 const API_URL = 'http://localhost:4000/api';
 
@@ -126,7 +126,7 @@ export const ReportesStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="monitoring" color="#0ea5e9" size="20px" />
+            <Icon name="monitoring" color="#2b6cb0" size="20px" />
             Panel de Métricas, Rendimiento de Calidad y Reportes de Turno
           </h2>
           <span className="badge badge-info">KPIs TELEMETRÍA EN VIVO</span>
@@ -200,40 +200,40 @@ export const ReportesStation: React.FC = () => {
         <div className="kpi-card">
           <span className="kpi-label">Ensambladas Hoy</span>
           <div className="kpi-value">
-            {totalEnsamblado} <span style={{ fontSize: '13px', color: '#64748b' }}>/ {metaTurno}</span>
+            {totalEnsamblado} <span style={{ fontSize: '13px', color: '#7b8794' }}>/ {metaTurno}</span>
           </div>
-          <span className="kpi-subtext" style={{ color: '#38bdf8' }}>
+          <span className="kpi-subtext" style={{ color: '#2b6cb0' }}>
             Meta: {porcentajeAvanceMeta}% alcanzado
           </span>
         </div>
 
-        <div className="kpi-card" style={{ borderColor: 'rgba(16, 185, 129, 0.4)' }}>
-          <span className="kpi-label" style={{ color: '#10b981' }}>Piezas Aprobadas (FPY)</span>
-          <div className="kpi-value" style={{ color: '#10b981' }}>{totalAprobadas}</div>
-          <span className="kpi-subtext" style={{ color: '#10b981' }}>
+        <div className="kpi-card" style={{ borderColor: 'rgba(47, 158, 68, 0.4)' }}>
+          <span className="kpi-label" style={{ color: '#2f9e44' }}>Piezas Aprobadas (FPY)</span>
+          <div className="kpi-value" style={{ color: '#2f9e44' }}>{totalAprobadas}</div>
+          <span className="kpi-subtext" style={{ color: '#2f9e44' }}>
             {tasaAprobacion}% de aprobación en primera pasada
           </span>
         </div>
 
-        <div className="kpi-card" style={{ borderColor: 'rgba(239, 68, 68, 0.4)' }}>
-          <span className="kpi-label" style={{ color: '#ef4444' }}>Scrap Definitivo</span>
-          <div className="kpi-value" style={{ color: '#ef4444' }}>{totalScrap}</div>
-          <span className="kpi-subtext" style={{ color: '#ef4444' }}>
+        <div className="kpi-card" style={{ borderColor: 'rgba(214, 69, 69, 0.4)' }}>
+          <span className="kpi-label" style={{ color: '#d64545' }}>Scrap Definitivo</span>
+          <div className="kpi-value" style={{ color: '#d64545' }}>{totalScrap}</div>
+          <span className="kpi-subtext" style={{ color: '#d64545' }}>
             Tasa de merma: {tasaScrap}%
           </span>
         </div>
 
-        <div className="kpi-card" style={{ borderColor: 'rgba(245, 158, 11, 0.4)' }}>
-          <span className="kpi-label" style={{ color: '#f59e0b' }}>En Retrabajo / Retención</span>
-          <div className="kpi-value" style={{ color: '#f59e0b' }}>{totalRetrabajo}</div>
-          <span className="kpi-subtext" style={{ color: '#f59e0b' }}>
+        <div className="kpi-card" style={{ borderColor: 'rgba(217, 142, 4, 0.4)' }}>
+          <span className="kpi-label" style={{ color: '#b7791f' }}>En Retrabajo / Retención</span>
+          <div className="kpi-value" style={{ color: '#b7791f' }}>{totalRetrabajo}</div>
+          <span className="kpi-subtext" style={{ color: '#b7791f' }}>
             {totalRetencion} pzas en retención preventiva
           </span>
         </div>
 
         <div className="kpi-card">
           <span className="kpi-label">Cajas Embaladas</span>
-          <div className="kpi-value" style={{ color: '#38bdf8' }}>{cajasSelladas}</div>
+          <div className="kpi-value" style={{ color: '#2b6cb0' }}>{cajasSelladas}</div>
           <span className="kpi-subtext">{piezasEmpacadas} pzas terminadas</span>
         </div>
       </div>
@@ -244,7 +244,7 @@ export const ReportesStation: React.FC = () => {
         <div className="panel">
           <div className="panel-header">
             <h2>
-              <Icon name="pie_chart" size="18px" color="#38bdf8" />
+              <Icon name="pie_chart" size="18px" color="#2b6cb0" />
               Distribución de Calidad en Planta (SSOT)
             </h2>
             <span className="badge badge-neutral">{totalEnsamblado} Evaluadas</span>
@@ -254,7 +254,7 @@ export const ReportesStation: React.FC = () => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', marginBottom: '4px' }}>
                   <span>Aprobadas ({totalAprobadas} pzas)</span>
-                  <span style={{ color: '#10b981', fontWeight: 700 }}>{tasaAprobacion}%</span>
+                  <span style={{ color: '#2f9e44', fontWeight: 700 }}>{tasaAprobacion}%</span>
                 </div>
                 <div className="progress-track" style={{ height: '8px' }}>
                   <div className="progress-fill success" style={{ width: `${tasaAprobacion}%` }} />
@@ -264,7 +264,7 @@ export const ReportesStation: React.FC = () => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', marginBottom: '4px' }}>
                   <span>En Retrabajo ({totalRetrabajo} pzas)</span>
-                  <span style={{ color: '#f59e0b', fontWeight: 700 }}>
+                  <span style={{ color: '#b7791f', fontWeight: 700 }}>
                     {totalEnsamblado > 0 ? ((totalRetrabajo / totalEnsamblado) * 100).toFixed(1) : 0}%
                   </span>
                 </div>
@@ -279,14 +279,14 @@ export const ReportesStation: React.FC = () => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', marginBottom: '4px' }}>
                   <span>Scrap ({totalScrap} pzas)</span>
-                  <span style={{ color: '#ef4444', fontWeight: 700 }}>{tasaScrap}%</span>
+                  <span style={{ color: '#d64545', fontWeight: 700 }}>{tasaScrap}%</span>
                 </div>
                 <div className="progress-track" style={{ height: '8px' }}>
                   <div
                     className="progress-fill"
                     style={{
                       width: `${tasaScrap}%`,
-                      backgroundColor: '#ef4444',
+                      backgroundColor: '#d64545',
                     }}
                   />
                 </div>
@@ -299,7 +299,7 @@ export const ReportesStation: React.FC = () => {
         <div className="panel">
           <div className="panel-header">
             <h2>
-              <Icon name="bar_chart" size="18px" color="#ef4444" />
+              <Icon name="bar_chart" size="18px" color="#d64545" />
               Pareto de Fallas Más Frecuentes (catalogo_defectos)
             </h2>
             <span className="badge badge-danger">Fallas Detectadas</span>
@@ -319,7 +319,7 @@ export const ReportesStation: React.FC = () => {
                 <tbody>
                   {defectosFrecuencia.map((def, idx) => (
                     <tr key={def.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#8493a8' }}>#{idx + 1}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', color: '#667085' }}>#{idx + 1}</td>
                       <td>
                         <span className="badge badge-warn" style={{ fontSize: '10px' }}>
                           {def.categoria}
@@ -327,7 +327,7 @@ export const ReportesStation: React.FC = () => {
                       </td>
                       <td>{def.descripcion}</td>
                       <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{def.frecuencia}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>{def.porcentaje}%</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', color: '#2b6cb0' }}>{def.porcentaje}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -341,7 +341,7 @@ export const ReportesStation: React.FC = () => {
       <div className="panel">
         <div className="panel-header">
           <h2>
-            <Icon name="table_chart" size="18px" color="#38bdf8" />
+            <Icon name="table_chart" size="18px" color="#2b6cb0" />
             Seguimiento de Órdenes de Producción (Tabla ordenes)
           </h2>
           <span className="badge badge-neutral">{ordenesFiltradas.length} Órdenes</span>
@@ -370,7 +370,7 @@ export const ReportesStation: React.FC = () => {
 
                   return (
                     <tr key={ord.id}>
-                      <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>
+                      <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#2b6cb0' }}>
                         {ord.folio}
                       </td>
                       <td>{ord.cliente}</td>
@@ -379,10 +379,10 @@ export const ReportesStation: React.FC = () => {
                       <td style={{ fontFamily: 'var(--font-mono)' }}>
                         {ord.cantidad_ensamblada} / {ord.cantidad_solicitada} ({pct}%)
                       </td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#10b981' }}>
+                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#2f9e44' }}>
                         {ord.cantidad_aprobada}
                       </td>
-                      <td style={{ fontFamily: 'var(--font-mono)', color: '#ef4444' }}>{ord.cantidad_scrap}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', color: '#d64545' }}>{ord.cantidad_scrap}</td>
                       <td>
                         <span className={`badge ${badge}`}>{ord.estado}</span>
                       </td>
