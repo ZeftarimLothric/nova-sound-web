@@ -40,9 +40,9 @@ export default function EmpaqueStation() {
   const ocupacion = cajaActual?.piezas_actuales || detallesDeCaja.length;
   const porcentaje = Math.min(100, Math.round((ocupacion / capacidad) * 100));
 
-  const handleCrearCaja = (e: React.FormEvent) => {
+  const handleCrearCaja = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = crearCaja(nuevoClienteId, nuevoModeloId, nuevoColorId);
+    const res = await crearCaja(nuevoClienteId, nuevoModeloId, nuevoColorId);
     if (res.ok && res.caja) {
       setCajaSeleccionadaId(res.caja.id);
       setModalNuevaCaja(false);
@@ -52,14 +52,14 @@ export default function EmpaqueStation() {
     }
   };
 
-  const handleEmpacar = (e: React.FormEvent) => {
+  const handleEmpacar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cajaActual) return;
     if (!serieInput.trim()) {
       setMensaje({ tipo: 'err', texto: 'Ingrese un número de serie' });
       return;
     }
-    const res = empacarPorSerie(serieInput.trim().toUpperCase(), cajaActual.id);
+    const res = await empacarPorSerie(serieInput.trim().toUpperCase(), cajaActual.id);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Unidad ${serieInput.trim()} empacada en slot ${ocupacion + 1}/${capacidad}` });
       setSerieInput('');
@@ -68,9 +68,9 @@ export default function EmpaqueStation() {
     }
   };
 
-  const handleCerrar = () => {
+  const handleCerrar = async () => {
     if (!cajaActual) return;
-    const res = cerrarCaja(cajaActual.id);
+    const res = await cerrarCaja(cajaActual.id);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Caja ${cajaActual.codigo_caja} cerrada y sellada` });
     } else {
@@ -78,9 +78,9 @@ export default function EmpaqueStation() {
     }
   };
 
-  const handleSolicitarReapertura = () => {
+  const handleSolicitarReapertura = async () => {
     if (!cajaActual) return;
-    const res = solicitarReaperturaCaja(cajaActual.id, motivoReapertura);
+    const res = await solicitarReaperturaCaja(cajaActual.id, motivoReapertura);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Solicitud de reapertura enviada al supervisor de almacén` });
       setModalReapertura(false);
@@ -90,9 +90,9 @@ export default function EmpaqueStation() {
     }
   };
 
-  const handleRetirarUnidad = () => {
+  const handleRetirarUnidad = async () => {
     if (!cajaActual || !serieRetirar) return;
-    const res = retirarUnidadCaja(cajaActual.id, serieRetirar, motivoRetiro);
+    const res = await retirarUnidadCaja(cajaActual.id, serieRetirar, motivoRetiro);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Unidad ${serieRetirar} retirada de la caja ${cajaActual.codigo_caja}` });
       setModalRetiro(false);
@@ -104,12 +104,12 @@ export default function EmpaqueStation() {
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">05</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[ESTACIÓN_04 // FORMACIÓN Y SELLADO]</span>
+            <span className="station-badge-code">Módulo 05 · Formación y Sellado de Cajas</span>
             <h1 className="station-title">Empaque y Consolidación de Cajas</h1>
             <span className="station-subtitle">
               Validación por cliente/modelo (Prevención Incidente B) y sellado de seguridad
@@ -173,15 +173,15 @@ export default function EmpaqueStation() {
               {cajaActual && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--gray-300)' }}>
-                      CLIENTE: <strong style={{ color: '#fff' }}>{cajaActual.cliente_nombre}</strong> | MODELO:{' '}
-                      <strong style={{ color: 'var(--accent)' }}>{cajaActual.modelo_nombre}</strong> | COLOR:{' '}
-                      <strong style={{ color: '#fff' }}>{cajaActual.color_nombre}</strong>
+                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                      CLIENTE: <strong style={{ color: 'var(--text-main)' }}>{cajaActual.cliente_nombre}</strong> | MODELO:{' '}
+                      <strong style={{ color: 'var(--carbon-900)' }}>{cajaActual.modelo_nombre}</strong> | COLOR:{' '}
+                      <strong style={{ color: 'var(--text-main)' }}>{cajaActual.color_nombre}</strong>
                     </span>
                     <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800 }}>{porcentaje}% LLENA</span>
                   </div>
                   {/* BARRA INDUSTRIAL DE PROGRESO */}
-                  <div style={{ height: '10px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)', overflow: 'hidden' }}>
+                  <div style={{ height: '10px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-default)', overflow: 'hidden' }}>
                     <div
                       style={{
                         height: '100%',
@@ -207,11 +207,11 @@ export default function EmpaqueStation() {
             </div>
             <div className="panel-body">
               {cajaActual?.estado === 'Cerrada' ? (
-                <div style={{ textAlign: 'center', padding: '2rem 1rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid var(--dark-500)' }}>
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid var(--border-default)' }}>
                   <span className="badge badge-danger" style={{ fontSize: '0.9rem', marginBottom: '0.75rem' }}>
                     CAJA CERRADA Y SELLADA
                   </span>
-                  <p style={{ color: 'var(--gray-300)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
                     No se admiten nuevas unidades en esta caja a menos que el Supervisor de Almacén autorice su reapertura formal.
                   </p>
                   <button onClick={() => setModalReapertura(true)} className="btn btn-carbon">
@@ -248,7 +248,7 @@ export default function EmpaqueStation() {
                           ))}
                       </select>
                     </div>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--gray-300)', marginTop: '0.2rem' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                       * El sistema valida automáticamente que la pieza esté Aprobada por Calidad y que coincida en Modelo y Color con la caja.
                     </span>
                   </div>
@@ -288,7 +288,7 @@ export default function EmpaqueStation() {
             </div>
             <div className="panel-body" style={{ maxHeight: '350px', overflowY: 'auto' }}>
               {detallesDeCaja.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem 0', fontSize: '0.85rem' }}>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 0', fontSize: '0.85rem' }}>
                   [CAJA VACÍA - LISTA PARA PRIMER SLOT]
                 </div>
               ) : (
@@ -297,8 +297,8 @@ export default function EmpaqueStation() {
                     <div
                       key={det.id}
                       style={{
-                        background: 'var(--dark-700)',
-                        border: '1px solid var(--dark-500)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-default)',
                         padding: '0.6rem 0.85rem',
                         display: 'flex',
                         alignItems: 'center',
@@ -309,7 +309,7 @@ export default function EmpaqueStation() {
                         <span
                           style={{
                             background: 'var(--accent)',
-                            color: 'var(--dark-900)',
+                            color: 'var(--carbon-900)',
                             fontFamily: 'var(--font-mono)',
                             fontWeight: 800,
                             padding: '0.1rem 0.4rem',
@@ -319,10 +319,10 @@ export default function EmpaqueStation() {
                           SLOT {det.slot}
                         </span>
                         <div>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#fff' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-main)' }}>
                             {det.numero_serie}
                           </span>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--gray-300)' }}>{det.fecha_empaque}</div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{det.fecha_empaque}</div>
                         </div>
                       </div>
 
@@ -351,7 +351,7 @@ export default function EmpaqueStation() {
       {/* MODAL: APERTURA DE NUEVA CAJA */}
       {modalNuevaCaja && (
         <div className="modal-overlay">
-          <div className="modal-content tex-carbon">
+          <div className="modal-content">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <span className="station-title" style={{ fontSize: '1.2rem' }}>
                 APERTURA DE NUEVA CAJA (P-21)
@@ -424,7 +424,7 @@ export default function EmpaqueStation() {
       {/* MODAL: SOLICITUD DE REAPERTURA */}
       {modalReapertura && (
         <div className="modal-overlay">
-          <div className="modal-content tex-carbon">
+          <div className="modal-content">
             <span className="station-title" style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'block' }}>
               SOLICITAR REAPERTURA DE CAJA SELLADA (RN-09)
             </span>
@@ -454,7 +454,7 @@ export default function EmpaqueStation() {
       {/* MODAL: RETIRO DE UNIDAD */}
       {modalRetiro && (
         <div className="modal-overlay">
-          <div className="modal-content tex-carbon">
+          <div className="modal-content">
             <span className="station-title" style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'block' }}>
               RETIRAR UNIDAD DE LA CAJA: {serieRetirar}
             </span>

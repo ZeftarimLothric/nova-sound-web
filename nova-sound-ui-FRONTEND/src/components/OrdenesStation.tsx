@@ -16,9 +16,9 @@ export default function OrdenesStation() {
   );
   const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'err'; texto: string } | null>(null);
 
-  const handleCrear = (e: React.FormEvent) => {
+  const handleCrear = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = crearOrden(folio, idCliente, idModelo, idColor, cantidad, fechaCompromiso);
+    const res = await crearOrden(folio, idCliente, idModelo, idColor, cantidad, fechaCompromiso);
     if (!res.ok) {
       setMensaje({ tipo: 'err', texto: res.error || 'Error al crear la orden' });
     } else {
@@ -27,8 +27,8 @@ export default function OrdenesStation() {
     }
   };
 
-  const handleImportar = () => {
-    const res = importarOrdenesCsv(textoCsv);
+  const handleImportar = async () => {
+    const res = await importarOrdenesCsv(textoCsv);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Importación exitosa: ${res.importadas} órdenes cargadas` });
       setModalImportar(false);
@@ -39,12 +39,12 @@ export default function OrdenesStation() {
 
   return (
     <div className="station-container">
-      {/* CABECERA INDUSTRIAL ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* CABECERA INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">01</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[MOD_ORDENES // GESTIÓN DE PRODUCCIÓN]</span>
+            <span className="station-badge-code">Módulo 01 · Gestión de Producción</span>
             <h1 className="station-title">Órdenes de Producción y Asignación</h1>
             <span className="station-subtitle">Alta, programación e importación de pedidos para líneas L1, L2 y L3</span>
           </div>
@@ -182,7 +182,7 @@ export default function OrdenesStation() {
                   <tbody>
                     {ordenes.map((ord) => (
                       <tr key={ord.id}>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent)' }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--carbon-900)' }}>
                           {ord.folio}
                         </td>
                         <td>{ord.cliente_nombre}</td>
@@ -217,14 +217,21 @@ export default function OrdenesStation() {
                             {CATALOGO_LINEAS.map((linea) => (
                               <button
                                 key={linea.id}
-                                onClick={() => asignarLineaOrden(ord.id, linea.id)}
+                                onClick={async () => {
+                                  const res = await asignarLineaOrden(ord.id, linea.id);
+                                  if (!res.ok) {
+                                    setMensaje({ tipo: 'err', texto: res.error || 'Error al asignar línea' });
+                                  } else {
+                                    setMensaje({ tipo: 'ok', texto: `Orden ${ord.folio} asignada a ${linea.nombre_linea}` });
+                                  }
+                                }}
                                 className="btn btn-outline"
                                 style={{
                                   height: '1.8rem',
                                   padding: '0 0.5rem',
                                   fontSize: '0.65rem',
                                   backgroundColor: ord.id_linea_asignada === linea.id ? 'var(--accent)' : undefined,
-                                  color: ord.id_linea_asignada === linea.id ? 'var(--dark-900)' : undefined,
+                                  color: ord.id_linea_asignada === linea.id ? 'var(--carbon-900)' : undefined,
                                   borderColor: ord.id_linea_asignada === linea.id ? 'var(--accent)' : undefined,
                                 }}
                                 title={`Asignar a Línea ${linea.nombre_linea}`}
@@ -247,7 +254,7 @@ export default function OrdenesStation() {
       {/* MODAL DE IMPORTACIÓN CSV */}
       {modalImportar && (
         <div className="modal-overlay">
-          <div className="modal-content tex-carbon">
+          <div className="modal-content">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <span className="station-title" style={{ fontSize: '1.2rem' }}>
                 IMPORTACIÓN MASIVA DE ÓRDENES (CSV)
@@ -256,7 +263,7 @@ export default function OrdenesStation() {
                 CERRAR
               </button>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--gray-300)', marginBottom: '0.75rem' }}>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
               Formato esperado por línea: <code>folio,modelo,color,cliente,cantidad,compromiso</code>
             </p>
             <textarea

@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { app } from './app.js';
 import { testConnection } from './config/db.js';
+import { initPgliteFallback } from './config/pglite-fallback.js';
 
 dotenv.config();
 
@@ -9,8 +10,12 @@ const PORT = Number(process.env.PORT) || 4000;
 async function bootstrap() {
   console.log('Iniciando servidor Nova Sound MES / SCADA API...');
 
-  // Intentar conectar a PostgreSQL
-  await testConnection();
+  // Intentar conectar a PostgreSQL; si no hay Postgres externo disponible, usar PGlite local
+  const connected = await testConnection();
+  if (!connected && process.env.NODE_ENV !== 'production') {
+    console.log('→ Activando PostgreSQL embebido local (PGlite) para desarrollo...');
+    await initPgliteFallback();
+  }
 
   app.listen(PORT, () => {
     console.log(`====================================================`);

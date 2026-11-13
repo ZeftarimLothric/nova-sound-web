@@ -26,8 +26,22 @@ import type {
   Bitacora,
 } from '../types/database';
 import { RolesEnum, EstadosCalidadEnum } from '../types/database';
+import {
+  authApi,
+  healthApi,
+  setApiAuthHeaders,
+  ordenesApi,
+  ensambleApi,
+  pruebasApi,
+  unidadesApi,
+  cajasApi,
+  embarquesApi,
+  turnosApi,
+  autorizacionesApi,
+  adminApi,
+} from '../services/apiClient';
 
-const SESSION_STORAGE_KEY = 'nova_sound_endfield_session_v2';
+const SESSION_STORAGE_KEY = 'nova_sound_session_v2';
 
 // ==============================================================================
 // 1. LOS 9 USUARIOS OFICIALES DEL CASO NOVA SOUND (P-37, BD-14, RNF-01c)
@@ -90,6 +104,7 @@ export const CATALOGO_LINEAS: Linea[] = [
 export const CATALOGO_TURNOS: Turno[] = [
   { id: 1, nombre_turno: 'Mañana', hora_inicio: '06:00', hora_fin: '14:00' },
   { id: 2, nombre_turno: 'Tarde', hora_inicio: '14:00', hora_fin: '22:00' },
+  { id: 3, nombre_turno: 'Noche', hora_inicio: '22:00', hora_fin: '06:00' },
 ];
 
 export const CATALOGO_TRANSPORTISTAS: Transportista[] = [
@@ -134,8 +149,16 @@ export interface PlantaContextType {
   sesion: SesionOperativa;
   setSesion: React.Dispatch<React.SetStateAction<SesionOperativa>>;
   estaAutenticado: boolean;
+  backendOnline: boolean;
   modoMantenimiento: boolean;
   mensajeMantenimiento: string;
+  vistaActual: string;
+  setVistaActual: React.Dispatch<React.SetStateAction<string>>;
+  serieTrazabilidad: string | null;
+  abrirTrazabilidad: (numeroSerie: string) => void;
+  sincronizarAhora: () => Promise<void>;
+  consultarTrazabilidadRemota: (numeroSerie: string) => Promise<ReturnType<PlantaContextType['buscarTrazabilidad']>>;
+  tienePermiso: (codigoPermiso: string) => boolean;
   iniciarSesion: (login: string, contrasena: string, idLinea?: number, idTurno?: number) => Promise<{ ok: boolean; error?: string }>;
   cerrarSesion: () => void;
   cambiarUsuarioSimulado: (idRol: number) => void;
@@ -144,15 +167,15 @@ export interface PlantaContextType {
 
   // Órdenes de Producción (P-40)
   ordenes: Orden[];
-  crearOrden: (folio: string, idCliente: number, idModelo: number, idColor: number, cantidad: number, fechaCompromiso: string) => { ok: boolean; error?: string };
-  importarOrdenesCsv: (textoCsv: string) => { ok: boolean; importadas: number; error?: string };
-  asignarLineaOrden: (idOrden: number, idLinea: number) => { ok: boolean; error?: string };
+  crearOrden: (folio: string, idCliente: number, idModelo: number, idColor: number, cantidad: number, fechaCompromiso: string) => Promise<{ ok: boolean; error?: string }>;
+  importarOrdenesCsv: (textoCsv: string) => Promise<{ ok: boolean; importadas: number; error?: string }>;
+  asignarLineaOrden: (idOrden: number, idLinea: number) => Promise<{ ok: boolean; error?: string }>;
 
   // Ensamble (F-03, P-11..P-15)
   conteosEnsamble: ConteoEnsamble[];
   defectosEnsamble: DefectoEnsamble[];
-  registrarConteoEnsamble: (idOrden: number, cantidad: number) => { ok: boolean; error?: string };
-  registrarDefectoEnsamble: (idOrden: number, idDefecto: number, cantidad: number, observaciones?: string) => { ok: boolean; error?: string };
+  registrarConteoEnsamble: (idOrden: number, cantidad: number) => Promise<{ ok: boolean; error?: string }>;
+  registrarDefectoEnsamble: (idOrden: number, idDefecto: number, cantidad: number, observaciones?: string) => Promise<{ ok: boolean; error?: string }>;
 
   // Pruebas Funcionales (F-04, P-41: Nacimiento oficial de la Serie)
   pruebasFuncionales: PruebaFuncional[];
@@ -160,7 +183,7 @@ export interface PlantaContextType {
     idOrden: number,
     checks: { encendido: boolean; audio: boolean; carga: boolean; bluetooth: boolean },
     idDefectoFalla?: number
-  ) => { ok: boolean; serieGenerada?: string; error?: string };
+  ) => Promise<{ ok: boolean; serieGenerada?: string; error?: string }>;
 
   // Calidad (F-05, F-06, P-16..P-20)
   unidades: Unidad[];
@@ -171,16 +194,16 @@ export interface PlantaContextType {
     idEstadoCalidad: number,
     idDefecto?: number,
     comentarios?: string
-  ) => { ok: boolean; error?: string };
+  ) => Promise<{ ok: boolean; error?: string }>;
 
   // Empaque y Cajas (F-08, F-09, P-21..P-25, Incidente B)
   cajas: Caja[];
   detallesCajas: DetalleCaja[];
-  crearCaja: (idCliente: number, idModelo: number, idColor: number) => { ok: boolean; caja?: Caja; error?: string };
-  empacarPorSerie: (numeroSerie: string, idCaja: number) => { ok: boolean; error?: string };
-  cerrarCaja: (idCaja: number) => { ok: boolean; error?: string };
-  solicitarReaperturaCaja: (idCaja: number, motivo: string) => { ok: boolean; error?: string };
-  retirarUnidadCaja: (idCaja: number, numeroSerie: string, motivo: string) => { ok: boolean; error?: string };
+  crearCaja: (idCliente: number, idModelo: number, idColor: number) => Promise<{ ok: boolean; caja?: Caja; error?: string }>;
+  empacarPorSerie: (numeroSerie: string, idCaja: number) => Promise<{ ok: boolean; error?: string }>;
+  cerrarCaja: (idCaja: number) => Promise<{ ok: boolean; error?: string }>;
+  solicitarReaperturaCaja: (idCaja: number, motivo: string) => Promise<{ ok: boolean; error?: string }>;
+  retirarUnidadCaja: (idCaja: number, numeroSerie: string, motivo: string) => Promise<{ ok: boolean; error?: string }>;
 
   // Logística y Embarques (F-10, F-11, P-26..P-29, Incidente C)
   embarques: Embarque[];
@@ -193,10 +216,10 @@ export interface PlantaContextType {
     placasUnidad: string,
     fechaProgramada: string,
     observaciones?: string
-  ) => { ok: boolean; embarque?: Embarque; error?: string };
-  asignarCajaEmbarque: (idEmbarque: number, idCaja: number) => { ok: boolean; error?: string };
-  retirarCajaEmbarque: (idEmbarque: number, idCaja: number) => { ok: boolean; error?: string };
-  despacharEmbarque: (idEmbarque: number) => { ok: boolean; error?: string };
+  ) => Promise<{ ok: boolean; embarque?: Embarque; error?: string }>;
+  asignarCajaEmbarque: (idEmbarque: number, idCaja: number) => Promise<{ ok: boolean; error?: string }>;
+  retirarCajaEmbarque: (idEmbarque: number, idCaja: number) => Promise<{ ok: boolean; error?: string }>;
+  despacharEmbarque: (idEmbarque: number) => Promise<{ ok: boolean; error?: string }>;
 
   // Trazabilidad 360° (P-42)
   buscarTrazabilidad: (numeroSerie: string) => {
@@ -211,14 +234,14 @@ export interface PlantaContextType {
 
   // Cierres de Turno y Balance (F-12, P-35, P-43, INC-A, INC-D)
   cierresTurno: CierreTurno[];
-  consolidarCierreTurno: (observaciones?: string) => { ok: boolean; cierre?: CierreTurno; error?: string };
-  solicitarCorreccionCierre: (idCierre: number, motivo: string) => { ok: boolean; error?: string };
+  consolidarCierreTurno: (observaciones?: string) => Promise<{ ok: boolean; cierre?: CierreTurno; error?: string }>;
+  solicitarCorreccionCierre: (idCierre: number, motivo: string) => Promise<{ ok: boolean; error?: string }>;
   solicitudesAutorizacion: SolicitudAutorizacion[];
-  resolverAutorizacion: (idSolicitud: number, accion: 'APROBADA' | 'RECHAZADA', comentarios?: string) => { ok: boolean; error?: string };
+  resolverAutorizacion: (idSolicitud: number, accion: 'APROBADA' | 'RECHAZADA', comentarios?: string) => Promise<{ ok: boolean; error?: string }>;
 
   // Configuración & Sistemas (P-36..P-39)
   parametros: ParametroSistema[];
-  setModoMantenimiento: (activo: boolean, mensaje?: string) => void;
+  setModoMantenimiento: (activo: boolean, mensaje?: string) => Promise<void>;
   bitacora: Bitacora[];
   registrarBitacora: (modulo: string, accion: string, motivo?: string) => void;
 }
@@ -229,24 +252,40 @@ const PlantaContext = createContext<PlantaContextType | undefined>(undefined);
 // PROVIDER DE PLANTA
 // ==============================================================================
 export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 1. SESIÓN OPERATIVA INICIAL
-  const [sesion, setSesion] = useState<SesionOperativa>(() => {
+  // 1. SESIÓN OPERATIVA INICIAL (solo se restaura si existe en localStorage)
+  const initialSessionState = (() => {
     try {
       const saved = localStorage.getItem(SESSION_STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved) as SesionOperativa;
+        if (parsed?.usuario?.id && parsed?.usuario?.id_rol && parsed?.linea && parsed?.turno) {
+          setApiAuthHeaders(parsed.usuario.id, parsed.usuario.id_rol);
+          return { sesion: parsed, autenticado: true };
+        }
       }
     } catch {}
     return {
-      usuario: USUARIOS_OFICIALES[8], // Admin por defecto (Marcela Juárez)
-      linea: CATALOGO_LINEAS[0],
-      turno: CATALOGO_TURNOS[0],
+      sesion: {
+        usuario: USUARIOS_OFICIALES[8],
+        linea: CATALOGO_LINEAS[0],
+        turno: CATALOGO_TURNOS[0],
+      },
+      autenticado: false,
     };
-  });
+  })();
 
-  const [estaAutenticado, setEstaAutenticado] = useState<boolean>(true);
+  const [sesion, setSesion] = useState<SesionOperativa>(initialSessionState.sesion);
+  const [estaAutenticado, setEstaAutenticado] = useState<boolean>(initialSessionState.autenticado);
+  const [backendOnline, setBackendOnline] = useState<boolean>(false);
   const [modoMantenimiento, setModoMantenimientoState] = useState<boolean>(false);
   const [mensajeMantenimiento, setMensajeMantenimiento] = useState<string>('Operación estándar de planta activa');
+  const [vistaActual, setVistaActual] = useState<string>('inicio');
+  const [serieTrazabilidad, setSerieTrazabilidad] = useState<string | null>(null);
+
+  const abrirTrazabilidad = (numeroSerie: string) => {
+    setSerieTrazabilidad(numeroSerie.trim().toUpperCase());
+    setVistaActual('trazabilidad');
+  };
 
   // 2. ESTADO DE ÓRDENES
   const [ordenes, setOrdenes] = useState<Orden[]>([
@@ -475,32 +514,414 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     { id: 1, fecha: '2026-11-04 06:00:00', id_usuario: 9, usuario_nombre: 'Marcela Juárez', modulo: 'SISTEMA', accion: 'INICIO_SCADA', motivo: 'Apertura de turno de manufactura' },
   ]);
 
-  // Sincronizar sesión con LocalStorage
+  // Sincronizar sesión con LocalStorage y headers RBAC
   useEffect(() => {
+    if (!estaAutenticado) return;
     try {
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sesion));
+      setApiAuthHeaders(sesion.usuario.id, sesion.usuario.id_rol);
     } catch {}
-  }, [sesion]);
+  }, [sesion, estaAutenticado]);
 
-  // MÉTODOS DE AUTENTICACIÓN Y SESIÓN
-  const iniciarSesion = async (login: string, _contrasena: string, idLinea = 1, idTurno = 1) => {
-    const usuarioEncontrado = USUARIOS_OFICIALES.find((u) => u.usuario_login.toLowerCase() === login.toLowerCase()) || USUARIOS_OFICIALES[8];
+  // Consultar estado real del backend (/api/health) y modo mantenimiento
+  useEffect(() => {
+    let mounted = true;
+    const checkHealth = async () => {
+      const res = await healthApi.getStatus();
+      if (!mounted) return;
+      if (res.ok) {
+        setBackendOnline(true);
+        setModoMantenimientoState(Boolean(res.data.modo_mantenimiento));
+        if (res.data.mensaje_mantenimiento) {
+          setMensajeMantenimiento(res.data.mensaje_mantenimiento);
+        }
+      } else {
+        setBackendOnline(false);
+      }
+    };
+    checkHealth();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Sincronización integral de módulos con PostgreSQL
+  const cargarOperacionCore = async () => {
+    const [ordRes, ensRes, pruRes, uniRes, histRes, cajRes, embRes, cieRes, autRes, parRes, bitRes] =
+      await Promise.all([
+        ordenesApi.getAll(),
+        ensambleApi.getRecientes(),
+        pruebasApi.getRecientes(50),
+        unidadesApi.getRecientes(100),
+        unidadesApi.getHistorial(100),
+        cajasApi.getAll(),
+        embarquesApi.getAll(),
+        turnosApi.getCierres(20),
+        autorizacionesApi.getAll(),
+        adminApi.getParametros(),
+        adminApi.getBitacora(),
+      ]);
+
+    if (ordRes.ok && Array.isArray(ordRes.data)) {
+      setOrdenes(
+        ordRes.data.map((o: any) => ({
+          id: Number(o.id),
+          folio: o.folio,
+          id_cliente: Number(o.id_cliente),
+          cliente_nombre:
+            o.cliente_nombre ||
+            o.nombre_cliente ||
+            CATALOGO_CLIENTES.find((c) => c.id === Number(o.id_cliente))?.nombre_cliente ||
+            'Cliente',
+          id_modelo: Number(o.id_modelo),
+          modelo_nombre:
+            o.modelo_nombre ||
+            o.nombre_modelo ||
+            CATALOGO_MODELOS.find((m) => m.id === Number(o.id_modelo))?.nombre_modelo ||
+            'Modelo',
+          id_color: Number(o.id_color),
+          color_nombre:
+            o.color_nombre ||
+            o.nombre_color ||
+            CATALOGO_COLORES.find((c) => c.id === Number(o.id_color))?.nombre_color ||
+            'Color',
+          cantidad: Number(o.cantidad),
+          fecha_compromiso: String(o.fecha_compromiso || '').substring(0, 10),
+          fecha_recepcion: String(o.fecha_recepcion || '').substring(0, 10),
+          id_usuario_registro: Number(o.id_usuario_registro || 1),
+          estado: o.estado || 'Pendiente',
+          id_linea_asignada: o.id_linea_asignada ? Number(o.id_linea_asignada) : null,
+          linea_nombre:
+            o.linea_nombre ||
+            o.nombre_linea ||
+            CATALOGO_LINEAS.find((l) => l.id === Number(o.id_linea_asignada))?.nombre_linea ||
+            null,
+          id_usuario_asigno: o.id_usuario_asigno ? Number(o.id_usuario_asigno) : null,
+          fecha_asignacion: o.fecha_asignacion || null,
+          piezas_ensambladas: Number(o.piezas_ensambladas ?? 0),
+          piezas_aprobadas: Number(o.piezas_aprobadas ?? 0),
+        }))
+      );
+    }
+
+    if (ensRes.ok && Array.isArray(ensRes.data)) {
+      setConteosEnsamble(
+        ensRes.data.map((c: any) => ({
+          id: Number(c.id),
+          id_orden: Number(c.id_orden),
+          id_linea: Number(c.id_linea),
+          id_turno: Number(c.id_turno),
+          id_operador: Number(c.id_operador),
+          cantidad: Number(c.cantidad),
+          fecha_hora: String(c.fecha_hora || c.fecha_registro || '').replace('T', ' ').substring(0, 19),
+        }))
+      );
+    }
+
+    if (pruRes.ok && Array.isArray(pruRes.data)) {
+      setPruebasFuncionales(
+        pruRes.data.map((p: any) => ({
+          id: Number(p.id),
+          id_orden: Number(p.id_orden),
+          id_linea: Number(p.id_linea),
+          id_turno: Number(p.id_turno),
+          id_usuario: Number(p.id_usuario || p.id_operador || 1),
+          valida_encendido: Boolean(p.valida_encendido),
+          valida_audio: Boolean(p.valida_audio),
+          valida_carga: Boolean(p.valida_carga),
+          valida_bluetooth: Boolean(p.valida_bluetooth),
+          aprobada: Boolean(
+            p.aprobada ?? (p.valida_encendido && p.valida_audio && p.valida_carga && p.valida_bluetooth)
+          ),
+          numero_serie: p.numero_serie || null,
+          id_defecto_falla: p.id_defecto_falla ? Number(p.id_defecto_falla) : null,
+          defecto_falla: p.defecto_falla || p.descripcion_defecto || null,
+          fecha_hora: String(p.fecha_hora || p.fecha_prueba || '').replace('T', ' ').substring(0, 19),
+        }))
+      );
+    }
+
+    if (uniRes.ok && Array.isArray(uniRes.data)) {
+      setUnidades(
+        uniRes.data.map((u: any) => ({
+          id: Number(u.id),
+          id_orden: Number(u.id_orden),
+          id_linea: Number(u.id_linea),
+          id_turno: Number(u.id_turno),
+          numero_serie: u.numero_serie,
+          id_estado_calidad: Number(u.id_estado_calidad),
+          estado_calidad_nombre:
+            u.estado_calidad_nombre ||
+            u.nombre_estado ||
+            CATALOGO_ESTADOS_CALIDAD.find((e) => e.id === Number(u.id_estado_calidad))?.nombre_estado ||
+            'Aprobada',
+          id_caja: u.id_caja ? Number(u.id_caja) : null,
+          fecha_ensamble: String(u.fecha_ensamble || '').replace('T', ' ').substring(0, 16),
+          modelo: u.modelo || u.nombre_modelo || 'NS-PRO',
+          color: u.color || u.nombre_color || 'Negro',
+          cliente: u.cliente || u.nombre_cliente,
+          id_prueba_funcional: u.id_prueba_funcional ? Number(u.id_prueba_funcional) : undefined,
+        }))
+      );
+    }
+
+    if (histRes.ok && Array.isArray(histRes.data)) {
+      setHistorialUnidades(
+        histRes.data.map((h: any) => ({
+          id: Number(h.id),
+          id_unidad: Number(h.id_unidad),
+          numero_serie: h.numero_serie || '',
+          id_usuario: Number(h.id_usuario || 1),
+          usuario_nombre: h.usuario_nombre || h.nombre_completo || 'Usuario',
+          estado_anterior: h.estado_anterior || '-',
+          estado_nuevo: h.estado_nuevo || '-',
+          motivo: h.motivo || '',
+          fecha_hora: String(h.fecha_hora || '').replace('T', ' ').substring(0, 16),
+        }))
+      );
+    }
+
+    if (cajRes.ok && Array.isArray(cajRes.data)) {
+      const detallesAcumulados: DetalleCaja[] = [];
+      setCajas(
+        cajRes.data.map((c: any) => {
+          if (Array.isArray(c.detalles)) {
+            for (const d of c.detalles) {
+              detallesAcumulados.push({
+                id: Number(d.id),
+                id_caja: Number(c.id),
+                id_unidad: Number(d.id_unidad),
+                numero_serie: d.numero_serie || '',
+                slot: Number(d.slot || 1),
+                fecha_empaque: String(d.fecha_empaque || '').replace('T', ' ').substring(0, 16),
+                id_usuario_empaco: Number(d.id_usuario_empaco || 1),
+                retirada: Boolean(d.retirada),
+                fecha_retiro: d.fecha_retiro ? String(d.fecha_retiro).replace('T', ' ').substring(0, 16) : null,
+                motivo_retiro: d.motivo_retiro || null,
+                id_usuario_retiro: d.id_usuario_retiro ? Number(d.id_usuario_retiro) : null,
+              });
+            }
+          }
+          return {
+            id: Number(c.id),
+            codigo_caja: c.codigo_caja,
+            id_cliente: Number(c.id_cliente),
+            cliente_nombre:
+              c.cliente_nombre ||
+              c.nombre_cliente ||
+              CATALOGO_CLIENTES.find((cl) => cl.id === Number(c.id_cliente))?.nombre_cliente ||
+              'Cliente',
+            id_modelo: Number(c.id_modelo),
+            modelo_nombre:
+              c.modelo_nombre ||
+              c.nombre_modelo ||
+              CATALOGO_MODELOS.find((m) => m.id === Number(c.id_modelo))?.nombre_modelo ||
+              'Modelo',
+            id_color: c.id_color ? Number(c.id_color) : 1,
+            color_nombre:
+              c.color_nombre ||
+              c.nombre_color ||
+              CATALOGO_COLORES.find((co) => co.id === Number(c.id_color))?.nombre_color ||
+              'Negro',
+            capacidad: Number(c.capacidad || 12),
+            piezas_actuales: Number(c.piezas_actuales ?? c.total_unidades ?? 0),
+            fecha_creacion: String(c.fecha_creacion || '').replace('T', ' ').substring(0, 19),
+            fecha_cierre: c.fecha_cierre ? String(c.fecha_cierre).replace('T', ' ').substring(0, 19) : null,
+            estado: c.estado || 'Abierta',
+            id_usuario_creador: Number(c.id_usuario_creador || 1),
+            id_usuario_cerro: c.id_usuario_cerro ? Number(c.id_usuario_cerro) : null,
+            id_embarque_asignado: c.id_embarque_asignado ? Number(c.id_embarque_asignado) : null,
+          };
+        })
+      );
+      if (detallesAcumulados.length > 0) {
+        setDetallesCajas(detallesAcumulados);
+      }
+    }
+
+    if (embRes.ok && Array.isArray(embRes.data)) {
+      const mapaCajas: Record<number, number[]> = {};
+      setEmbarques(
+        embRes.data.map((e: any) => {
+          const embId = Number(e.id);
+          if (Array.isArray(e.cajas)) {
+            mapaCajas[embId] = e.cajas.map((c: any) => Number(typeof c === 'object' ? c.id : c));
+          }
+          return {
+            id: embId,
+            referencia_embarque: e.referencia_embarque,
+            id_pedido: e.id_pedido || '',
+            id_cliente: Number(e.id_cliente),
+            cliente_nombre:
+              e.cliente_nombre ||
+              e.nombre_cliente ||
+              CATALOGO_CLIENTES.find((cl) => cl.id === Number(e.id_cliente))?.nombre_cliente ||
+              'Cliente',
+            id_transportista: Number(e.id_transportista),
+            transportista_nombre:
+              e.transportista_nombre ||
+              CATALOGO_TRANSPORTISTAS.find((t) => t.id === Number(e.id_transportista))?.nombre ||
+              'Transportista',
+            nombre_chofer: e.nombre_chofer || '',
+            placas_unidad: e.placas_unidad || '',
+            fecha_programada: String(e.fecha_programada || '').replace('T', ' ').substring(0, 16),
+            fecha_salida: e.fecha_salida ? String(e.fecha_salida).replace('T', ' ').substring(0, 16) : null,
+            estado: e.estado || 'Programado',
+            observaciones: e.observaciones || null,
+            id_usuario_creo: Number(e.id_usuario_creo || 1),
+            id_usuario_confirmo: e.id_usuario_confirmo ? Number(e.id_usuario_confirmo) : null,
+            fecha_creacion: String(e.fecha_creacion || '').replace('T', ' ').substring(0, 16),
+            total_cajas: Number(e.total_cajas ?? (Array.isArray(e.cajas) ? e.cajas.length : 0)),
+            total_piezas: Number(e.total_piezas ?? 0),
+          };
+        })
+      );
+      if (Object.keys(mapaCajas).length > 0) {
+        setCajasAsignadasEmbarque((prev) => ({ ...prev, ...mapaCajas }));
+      }
+    }
+
+    if (cieRes.ok && Array.isArray(cieRes.data)) {
+      setCierresTurno(
+        cieRes.data.map((c: any) => ({
+          id: Number(c.id),
+          fecha: String(c.fecha || '').substring(0, 10),
+          id_turno: Number(c.id_turno),
+          turno_nombre:
+            c.turno_nombre ||
+            CATALOGO_TURNOS.find((t) => t.id === Number(c.id_turno))?.nombre_turno ||
+            'Mañana',
+          id_linea: Number(c.id_linea),
+          linea_nombre:
+            c.linea_nombre ||
+            CATALOGO_LINEAS.find((l) => l.id === Number(c.id_linea))?.nombre_linea ||
+            'L1',
+          id_lider_linea: Number(c.id_lider_linea || c.id_lider || 1),
+          lider_nombre: c.lider_nombre || 'Líder de Línea',
+          piezas_ensambladas: Number(c.piezas_ensambladas ?? 0),
+          piezas_probadas: Number(c.piezas_probadas ?? 0),
+          piezas_aprobadas_calidad: Number(c.piezas_aprobadas_calidad ?? 0),
+          piezas_retrabajo: Number(c.piezas_retrabajo ?? 0),
+          piezas_retencion: Number(c.piezas_retencion ?? 0),
+          piezas_scrap: Number(c.piezas_scrap ?? 0),
+          piezas_empacadas: Number(c.piezas_empacadas ?? 0),
+          piezas_embarcadas: Number(c.piezas_embarcadas ?? 0),
+          diferencia_balance: Number(c.diferencia_balance ?? 0),
+          objetivo_turno: Number(c.objetivo_turno ?? 100),
+          cumplimiento_pct: Number(c.cumplimiento_pct ?? 0),
+          estado: c.estado || 'Cerrado',
+          observaciones: c.observaciones || '',
+          fecha_cierre: String(c.fecha_cierre || '').replace('T', ' ').substring(0, 19),
+        }))
+      );
+    }
+
+    if (autRes.ok && Array.isArray(autRes.data)) {
+      setSolicitudesAutorizacion(
+        autRes.data.map((s: any) => ({
+          id: Number(s.id),
+          tipo: s.tipo,
+          id_entidad: Number(s.id_entidad ?? s.id_referencia ?? 0),
+          descripcion_entidad: s.descripcion_entidad || `${s.tipo} #${s.id_referencia ?? s.id_entidad ?? ''}`,
+          motivo: s.motivo || '',
+          id_usuario_solicita: Number(s.id_usuario_solicita || 1),
+          usuario_solicita_nombre: s.usuario_solicita_nombre || 'Usuario',
+          estado: s.estado || 'PENDIENTE',
+          fecha_solicitud: String(s.fecha_solicitud || '').replace('T', ' ').substring(0, 16),
+          id_usuario_autoriza: s.id_usuario_autoriza ? Number(s.id_usuario_autoriza) : undefined,
+          usuario_autoriza_nombre: s.usuario_autoriza_nombre || undefined,
+          fecha_resolucion: s.fecha_resolucion ? String(s.fecha_resolucion).replace('T', ' ').substring(0, 16) : undefined,
+          comentarios_resolucion: s.comentarios_resolucion || s.comentario_resolucion || undefined,
+        }))
+      );
+    }
+
+    if (parRes.ok && Array.isArray(parRes.data)) {
+      setParametros(
+        parRes.data.map((p: any) => ({
+          id: Number(p.id),
+          clave: p.clave,
+          valor: p.valor,
+          tipo_dato: p.tipo_dato,
+          descripcion: p.descripcion,
+        }))
+      );
+    }
+
+    if (bitRes.ok && Array.isArray(bitRes.data)) {
+      setBitacora(
+        bitRes.data.map((b: any) => ({
+          id: Number(b.id),
+          fecha: String(b.fecha || b.fecha_hora || '').replace('T', ' ').substring(0, 19),
+          id_usuario: Number(b.id_usuario || 1),
+          usuario_nombre: b.usuario_nombre || b.nombre_completo || 'Usuario',
+          modulo: b.modulo || 'SISTEMA',
+          accion: b.accion || '',
+          motivo: b.motivo || undefined,
+        }))
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (estaAutenticado) {
+      cargarOperacionCore();
+    }
+  }, [estaAutenticado]);
+
+  const tienePermiso = (codigoPermiso: string): boolean => {
+    const permisos = sesion.usuario.permisos;
+    if (Array.isArray(permisos) && permisos.length > 0) {
+      return permisos.includes(codigoPermiso);
+    }
+    return sesion.usuario.id_rol === RolesEnum.ADMINISTRADOR;
+  };
+
+  // MÉTODOS DE AUTENTICACIÓN Y SESIÓN (conectado a POST /api/auth/login)
+  const iniciarSesion = async (login: string, contrasena: string, idLinea = 1, idTurno = 1) => {
+    const res = await authApi.login(login, contrasena);
+    if (!res.ok) {
+      if (res.status === 0) setBackendOnline(false);
+      return { ok: false, error: res.error };
+    }
+
+    setBackendOnline(true);
     const lineaObj = CATALOGO_LINEAS.find((l) => l.id === idLinea) || CATALOGO_LINEAS[0];
     const turnoObj = CATALOGO_TURNOS.find((t) => t.id === idTurno) || CATALOGO_TURNOS[0];
 
+    const usuarioAutenticado: Usuario = {
+      id: res.data.usuario.id,
+      nomina: res.data.usuario.nomina,
+      nombre_completo: res.data.usuario.nombre_completo,
+      usuario_login: res.data.usuario.usuario_login,
+      id_rol: res.data.usuario.id_rol,
+      nombre_rol: res.data.usuario.nombre_rol,
+      permisos: res.data.usuario.permisos || [],
+      activo: res.data.usuario.activo,
+    };
+
     const nuevaSesion: SesionOperativa = {
-      usuario: usuarioEncontrado,
+      usuario: usuarioAutenticado,
       linea: lineaObj,
       turno: turnoObj,
     };
+
+    setApiAuthHeaders(usuarioAutenticado.id, usuarioAutenticado.id_rol);
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nuevaSesion));
+    } catch {}
     setSesion(nuevaSesion);
     setEstaAutenticado(true);
-    registrarBitacora('AUTH', `LOGIN_EXITOSO: ${usuarioEncontrado.nombre_completo}`);
+    registrarBitacora('AUTH', `LOGIN_EXITOSO: ${usuarioAutenticado.nombre_completo}`);
     return { ok: true };
   };
 
   const cerrarSesion = () => {
     setEstaAutenticado(false);
+    setApiAuthHeaders(null, null);
+    try {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch {}
   };
 
   const cambiarUsuarioSimulado = (idRol: number) => {
@@ -522,9 +943,20 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setSesion((prev) => ({ ...prev, turno }));
   };
 
-  const setModoMantenimiento = (activo: boolean, mensaje?: string) => {
+  const setModoMantenimiento = async (activo: boolean, mensaje?: string) => {
     setModoMantenimientoState(activo);
     if (mensaje) setMensajeMantenimiento(mensaje);
+
+    const paramMant = parametros.find((p) => p.clave === 'SISTEMA_MODO_MANTENIMIENTO');
+    const paramMsg = parametros.find((p) => p.clave === 'MENSAJE_MANTENIMIENTO');
+
+    if (paramMant) {
+      await adminApi.updateParametro(paramMant.id, String(activo));
+    }
+    if (paramMsg && mensaje !== undefined) {
+      await adminApi.updateParametro(paramMsg.id, mensaje);
+    }
+
     setParametros((prev) =>
       prev.map((p) =>
         p.clave === 'SISTEMA_MODO_MANTENIMIENTO'
@@ -553,99 +985,87 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // ==============================================================================
   // MÓDULO 1: ÓRDENES DE PRODUCCIÓN (P-40, F-01, F-02)
   // ==============================================================================
-  const crearOrden = (folio: string, idCliente: number, idModelo: number, idColor: number, cantidad: number, fechaCompromiso: string) => {
+  const crearOrden = async (
+    folio: string,
+    idCliente: number,
+    idModelo: number,
+    idColor: number,
+    cantidad: number,
+    fechaCompromiso: string
+  ) => {
     if (!folio || cantidad <= 0) return { ok: false, error: 'Folio y cantidad mayor a cero requeridos' };
-    const cliente = CATALOGO_CLIENTES.find((c) => c.id === idCliente);
-    const modelo = CATALOGO_MODELOS.find((m) => m.id === idModelo);
-    const color = CATALOGO_COLORES.find((c) => c.id === idColor);
 
-    const nueva: Orden = {
-      id: ordenes.length + 1,
+    const res = await ordenesApi.create({
       folio,
       id_cliente: idCliente,
-      cliente_nombre: cliente?.nombre_cliente || 'Cliente',
       id_modelo: idModelo,
-      modelo_nombre: modelo?.nombre_modelo || 'Modelo',
       id_color: idColor,
-      color_nombre: color?.nombre_color || 'Color',
       cantidad,
       fecha_compromiso: fechaCompromiso || '2026-11-20',
-      fecha_recepcion: new Date().toISOString().substring(0, 10),
       id_usuario_registro: sesion.usuario.id,
-      estado: 'Pendiente',
-      id_linea_asignada: null,
-      linea_nombre: null,
-      id_usuario_asigno: null,
-      fecha_asignacion: null,
-      piezas_ensambladas: 0,
-      piezas_aprobadas: 0,
-    };
-    setOrdenes((prev) => [nueva, ...prev]);
-    registrarBitacora('ORDENES', `CREAR_ORDEN: Folio ${folio} (${cantidad} pzas)`, `Cliente: ${cliente?.nombre_cliente}`);
+    });
+
+    if (!res.ok) return { ok: false, error: res.error };
+
+    await cargarOperacionCore();
+    registrarBitacora('ORDENES', `CREAR_ORDEN: Folio ${folio} (${cantidad} pzas)`);
     return { ok: true };
   };
 
-  const importarOrdenesCsv = (textoCsv: string) => {
+  const importarOrdenesCsv = async (textoCsv: string) => {
     try {
-      const lineas = textoCsv.trim().split('\n');
-      let count = 0;
-      const nuevas: Orden[] = [];
+      const lineas = textoCsv.trim().split(/\r?\n/);
+      const items: any[] = [];
+
       for (const line of lineas) {
-        if (!line || line.startsWith('folio') || line.startsWith('FOLIO')) continue;
+        if (!line || line.toLowerCase().startsWith('folio')) continue;
         const [folio, modeloNombre, colorNombre, clienteNombre, cantStr, compromiso] = line.split(',').map((s) => s.trim());
         if (!folio || !cantStr) continue;
-        const modelo = CATALOGO_MODELOS.find((m) => m.nombre_modelo.toLowerCase() === (modeloNombre || '').toLowerCase()) || CATALOGO_MODELOS[0];
-        const color = CATALOGO_COLORES.find((c) => c.nombre_color.toLowerCase() === (colorNombre || '').toLowerCase()) || CATALOGO_COLORES[0];
-        const cliente = CATALOGO_CLIENTES.find((c) => c.nombre_cliente.toLowerCase().includes((clienteNombre || '').toLowerCase())) || CATALOGO_CLIENTES[0];
 
-        nuevas.push({
-          id: ordenes.length + count + 1,
+        const modelo =
+          CATALOGO_MODELOS.find((m) => m.nombre_modelo.toLowerCase() === (modeloNombre || '').toLowerCase()) ||
+          CATALOGO_MODELOS[0];
+        const color =
+          CATALOGO_COLORES.find((c) => c.nombre_color.toLowerCase() === (colorNombre || '').toLowerCase()) ||
+          CATALOGO_COLORES[0];
+        const cliente =
+          CATALOGO_CLIENTES.find((c) => c.nombre_cliente.toLowerCase().includes((clienteNombre || '').toLowerCase())) ||
+          CATALOGO_CLIENTES[0];
+
+        items.push({
           folio,
           id_cliente: cliente.id,
-          cliente_nombre: cliente.nombre_cliente,
           id_modelo: modelo.id,
-          modelo_nombre: modelo.nombre_modelo,
           id_color: color.id,
-          color_nombre: color.nombre_color,
           cantidad: parseInt(cantStr, 10) || 50,
           fecha_compromiso: compromiso || '2026-11-30',
-          fecha_recepcion: new Date().toISOString().substring(0, 10),
-          id_usuario_registro: sesion.usuario.id,
-          estado: 'Pendiente',
-          id_linea_asignada: null,
-          linea_nombre: null,
-          id_usuario_asigno: null,
-          fecha_asignacion: null,
-          piezas_ensambladas: 0,
-          piezas_aprobadas: 0,
         });
-        count++;
       }
-      setOrdenes((prev) => [...nuevas, ...prev]);
-      registrarBitacora('ORDENES', `IMPORTAR_CSV: ${count} órdenes cargadas masivamente`);
-      return { ok: true, importadas: count };
+
+      if (items.length === 0) {
+        return { ok: false, importadas: 0, error: 'No se encontraron filas válidas en el CSV' };
+      }
+
+      const res = await ordenesApi.importar({ ordenes: items, id_usuario: sesion.usuario.id });
+      if (!res.ok) return { ok: false, importadas: 0, error: res.error };
+
+      await cargarOperacionCore();
+      const total = res.data.total_importadas ?? items.length;
+      registrarBitacora('ORDENES', `IMPORTAR_CSV: ${total} órdenes cargadas masivamente`);
+      return { ok: true, importadas: total };
     } catch {
       return { ok: false, importadas: 0, error: 'Error al procesar el archivo CSV' };
     }
   };
 
-  const asignarLineaOrden = (idOrden: number, idLinea: number) => {
+  const asignarLineaOrden = async (idOrden: number, idLinea: number) => {
     const linea = CATALOGO_LINEAS.find((l) => l.id === idLinea);
     if (!linea) return { ok: false, error: 'Línea no válida' };
-    setOrdenes((prev) =>
-      prev.map((ord) =>
-        ord.id === idOrden
-          ? {
-              ...ord,
-              id_linea_asignada: idLinea,
-              linea_nombre: linea.nombre_linea,
-              id_usuario_asigno: sesion.usuario.id,
-              fecha_asignacion: new Date().toISOString().replace('T', ' ').substring(0, 16),
-              estado: 'Asignada',
-            }
-          : ord
-      )
-    );
+
+    const res = await ordenesApi.asignarLinea(idOrden, idLinea, sesion.usuario.id);
+    if (!res.ok) return { ok: false, error: res.error };
+
+    await cargarOperacionCore();
     registrarBitacora('ORDENES', `ASIGNAR_LINEA: Orden #${idOrden} -> Línea ${linea.nombre_linea}`);
     return { ok: true };
   };
@@ -653,34 +1073,45 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // ==============================================================================
   // MÓDULO 2: ENSAMBLE (F-03, P-11..P-14: Conteo sin serie)
   // ==============================================================================
-  const registrarConteoEnsamble = (idOrden: number, cantidad: number) => {
+  const registrarConteoEnsamble = async (idOrden: number, cantidad: number) => {
     if (cantidad <= 0) return { ok: false, error: 'Cantidad inválida para registro de ensamble' };
     const orden = ordenes.find((o) => o.id === idOrden);
     if (!orden) return { ok: false, error: 'Orden no encontrada' };
 
-    const nuevoConteo: ConteoEnsamble = {
-      id: conteosEnsamble.length + 1,
+    const res = await ensambleApi.registrarConteo({
       id_orden: idOrden,
       id_linea: sesion.linea.id,
       id_turno: sesion.turno.id,
       id_operador: sesion.usuario.id,
       cantidad,
-      fecha_hora: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    };
-    setConteosEnsamble((prev) => [nuevoConteo, ...prev]);
+    });
 
-    setOrdenes((prev) =>
-      prev.map((o) => (o.id === idOrden ? { ...o, piezas_ensambladas: (o.piezas_ensambladas || 0) + cantidad, estado: 'En Producción' } : o))
-    );
+    if (!res.ok) return { ok: false, error: res.error };
 
+    await cargarOperacionCore();
     registrarBitacora('ENSAMBLE', `CONTEO_REGISTRADO: +${cantidad} pzas en Orden ${orden.folio} (Línea ${sesion.linea.nombre_linea})`);
     return { ok: true };
   };
 
-  const registrarDefectoEnsamble = (idOrden: number, idDefecto: number, cantidad: number, observaciones?: string) => {
+  const registrarDefectoEnsamble = async (idOrden: number, idDefecto: number, cantidad: number, observaciones?: string) => {
     const def = CATALOGO_DEFECTOS_OFICIALES.find((d) => d.id === idDefecto);
+    const conteoRelacionado = conteosEnsamble.find((c) => c.id_orden === idOrden) || conteosEnsamble[0];
+    if (!conteoRelacionado) {
+      return { ok: false, error: 'Registra primero un conteo de ensamble para asociar el defecto (BD-06).' };
+    }
+
+    const res = await ensambleApi.registrarDefecto({
+      id_ensamble: conteoRelacionado.id,
+      id_defecto: idDefecto,
+      cantidad,
+      motivo: (observaciones && observaciones.trim().length >= 3) ? observaciones.trim() : (def?.descripcion || 'Defecto en ensamble'),
+      id_usuario: sesion.usuario.id,
+    });
+
+    if (!res.ok) return { ok: false, error: res.error };
+
     const nuevoDefecto: DefectoEnsamble = {
-      id: defectosEnsamble.length + 1,
+      id: res.data?.data?.id || defectosEnsamble.length + 1,
       id_orden: idOrden,
       id_linea: sesion.linea.id,
       id_turno: sesion.turno.id,
@@ -699,7 +1130,7 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // ==============================================================================
   // MÓDULO 3: PRUEBA FUNCIONAL (F-04, P-41: Nacimiento de Serie Oficial)
   // ==============================================================================
-  const evaluarPruebaFuncional = (
+  const evaluarPruebaFuncional = async (
     idOrden: number,
     checks: { encendido: boolean; audio: boolean; carga: boolean; bluetooth: boolean },
     idDefectoFalla?: number
@@ -708,92 +1139,58 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!orden) return { ok: false, error: 'Orden no seleccionada para prueba funcional' };
 
     const todasAprobadas = checks.encendido && checks.audio && checks.carga && checks.bluetooth;
-    let serieGenerada: string | null = null;
-
-    if (todasAprobadas) {
-      // NACE EL NÚMERO DE SERIE OFICIAL
-      const numConsecutivo = (pruebasFuncionales.length + 1).toString().padStart(4, '0');
-      serieGenerada = `NS-2026-${numConsecutivo}`;
-
-      // Crear unidad automáticamente en estado inicial para Calidad
-      const nuevaUnidad: Unidad = {
-        id: unidades.length + 1,
-        id_orden: idOrden,
-        id_linea: sesion.linea.id,
-        id_turno: sesion.turno.id,
-        numero_serie: serieGenerada,
-        id_estado_calidad: EstadosCalidadEnum.APROBADA, // Nace lista para validación de Calidad
-        estado_calidad_nombre: 'Aprobada',
-        id_caja: null, // Suelta en planta
-        fecha_ensamble: new Date().toISOString().replace('T', ' ').substring(0, 16),
-        modelo: orden.modelo_nombre,
-        color: orden.color_nombre,
-        cliente: orden.cliente_nombre,
-        id_prueba_funcional: pruebasFuncionales.length + 1,
-      };
-      setUnidades((prev) => [nuevaUnidad, ...prev]);
-
-      setOrdenes((prev) =>
-        prev.map((o) => (o.id === idOrden ? { ...o, piezas_aprobadas: (o.piezas_aprobadas || 0) + 1 } : o))
-      );
-    }
-
     const def = CATALOGO_DEFECTOS_OFICIALES.find((d) => d.id === idDefectoFalla);
-    const nuevaPrueba: PruebaFuncional = {
-      id: pruebasFuncionales.length + 1,
+
+    const res = await pruebasApi.evaluar({
       id_orden: idOrden,
       id_linea: sesion.linea.id,
       id_turno: sesion.turno.id,
-      id_usuario: sesion.usuario.id,
+      id_operador: sesion.usuario.id,
       valida_encendido: checks.encendido,
       valida_audio: checks.audio,
       valida_carga: checks.carga,
       valida_bluetooth: checks.bluetooth,
-      aprobada: todasAprobadas,
-      numero_serie: serieGenerada,
-      id_defecto_falla: todasAprobadas ? null : idDefectoFalla,
-      defecto_falla: todasAprobadas ? null : def?.descripcion || 'Falla funcional',
-      fecha_hora: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    };
+      ...(!todasAprobadas && idDefectoFalla ? { id_defecto: idDefectoFalla, descripcion_defecto: def?.descripcion } : {}),
+    });
 
-    setPruebasFuncionales((prev) => [nuevaPrueba, ...prev]);
+    if (!res.ok) return { ok: false, error: res.error };
+
+    const serieGenerada = res.data.numero_serie || res.data.unidad?.numero_serie || undefined;
+    await cargarOperacionCore();
+
     registrarBitacora(
       'PRUEBAS_FUNCIONALES',
       todasAprobadas ? `APROBADA_SERIE_EMITIDA: ${serieGenerada}` : `RECHAZADA_SIN_SERIE: ${def?.descripcion || 'Falla checks'}`,
       `Orden ${orden.folio}`
     );
 
-    return { ok: true, serieGenerada: serieGenerada || undefined };
+    return { ok: true, serieGenerada };
   };
 
   // ==============================================================================
   // MÓDULO 4: CALIDAD Y DISPOSICIÓN (F-05, F-06, P-16..P-20)
   // ==============================================================================
-  const dictaminarCalidad = (numeroSerie: string, idEstadoCalidad: number, idDefecto?: number, comentarios?: string) => {
-    const unidad = unidades.find((u) => u.numero_serie === numeroSerie);
-    if (!unidad) return { ok: false, error: `Unidad serie ${numeroSerie} no localizada en el sistema` };
-
+  const dictaminarCalidad = async (numeroSerie: string, idEstadoCalidad: number, idDefecto?: number, comentarios?: string) => {
     const estadoObj = CATALOGO_ESTADOS_CALIDAD.find((e) => e.id === idEstadoCalidad);
     const defectoObj = CATALOGO_DEFECTOS_OFICIALES.find((d) => d.id === idDefecto);
-    const estadoAnteriorNombre = unidad.estado_calidad_nombre || 'Desconocido';
 
-    // Actualizar unidad
-    setUnidades((prev) =>
-      prev.map((u) =>
-        u.numero_serie === numeroSerie
-          ? {
-              ...u,
-              id_estado_calidad: idEstadoCalidad,
-              estado_calidad_nombre: estadoObj?.nombre_estado || 'Aprobada',
-            }
-          : u
-      )
-    );
+    const res = await unidadesApi.dictaminar({
+      numero_serie: numeroSerie,
+      id_estado_calidad: idEstadoCalidad,
+      id_usuario: sesion.usuario.id,
+      id_defectos: idDefecto ? [idDefecto] : undefined,
+      comentarios: comentarios || undefined,
+      motivo: comentarios || defectoObj?.descripcion || 'Dictamen de calidad registrado',
+    });
 
-    // Registro de inspección
+    if (!res.ok) return { ok: false, error: res.error };
+
+    await cargarOperacionCore();
+
+    const unidadRef = unidades.find((u) => u.numero_serie === numeroSerie);
     const nuevaInspeccion: InspeccionCalidad = {
       id: inspeccionesCalidad.length + 1,
-      id_unidad: unidad.id,
+      id_unidad: unidadRef?.id || 0,
       numero_serie: numeroSerie,
       id_inspector: sesion.usuario.id,
       inspector_nombre: sesion.usuario.nombre_completo,
@@ -806,20 +1203,6 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
     setInspeccionesCalidad((prev) => [nuevaInspeccion, ...prev]);
 
-    // Historial trazabilidad
-    const nuevoHistorial: HistorialUnidad = {
-      id: historialUnidades.length + 1,
-      id_unidad: unidad.id,
-      numero_serie: numeroSerie,
-      id_usuario: sesion.usuario.id,
-      usuario_nombre: sesion.usuario.nombre_completo,
-      estado_anterior: estadoAnteriorNombre,
-      estado_nuevo: estadoObj?.nombre_estado || 'Aprobada',
-      motivo: comentarios || defectoObj?.descripcion || 'Dictamen de calidad registrado',
-      fecha_hora: new Date().toISOString().replace('T', ' ').substring(0, 16),
-    };
-    setHistorialUnidades((prev) => [nuevoHistorial, ...prev]);
-
     registrarBitacora('CALIDAD', `DICTAMEN: Serie ${numeroSerie} -> ${estadoObj?.nombre_estado}`, comentarios);
     return { ok: true };
   };
@@ -827,173 +1210,80 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // ==============================================================================
   // MÓDULO 5: EMPAQUE Y CAJAS (F-08, F-09, P-21..P-25, Incidente B)
   // ==============================================================================
-  const crearCaja = (idCliente: number, idModelo: number, idColor: number) => {
-    const cliente = CATALOGO_CLIENTES.find((c) => c.id === idCliente);
-    const modelo = CATALOGO_MODELOS.find((m) => m.id === idModelo);
-    const color = CATALOGO_COLORES.find((c) => c.id === idColor);
-
-    if (!cliente || !modelo || !color) {
-      return { ok: false, error: 'Debe especificar Cliente, Modelo y Color para abrir una caja oficial' };
-    }
-
-    const nuevaCaja: Caja = {
-      id: cajas.length + 1,
-      codigo_caja: `BX-2026-${(cajas.length + 1).toString().padStart(3, '0')}`,
+  const crearCaja = async (idCliente: number, idModelo: number, idColor: number) => {
+    const res = await cajasApi.create({
       id_cliente: idCliente,
-      cliente_nombre: cliente.nombre_cliente,
       id_modelo: idModelo,
-      modelo_nombre: modelo.nombre_modelo,
       id_color: idColor,
-      color_nombre: color.nombre_color,
-      capacidad: modelo.capacidad_caja, // Oficial según catálogo de modelos
-      piezas_actuales: 0,
-      fecha_creacion: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      fecha_cierre: null,
-      estado: 'Abierta',
       id_usuario_creador: sesion.usuario.id,
-    };
+    });
+    if (!res.ok) return { ok: false, error: res.error };
 
-    setCajas((prev) => [nuevaCaja, ...prev]);
-    registrarBitacora('EMPAQUE', `APERTURA_CAJA: ${nuevaCaja.codigo_caja} (${modelo.nombre_modelo} ${color.nombre_color} - Cap: ${modelo.capacidad_caja})`);
-    return { ok: true, caja: nuevaCaja };
+    await cargarOperacionCore();
+    const cajaCreada = res.data.data;
+    registrarBitacora('EMPAQUE', `APERTURA_CAJA: ${cajaCreada?.codigo_caja || 'Nueva caja'}`);
+    return { ok: true, caja: cajaCreada };
   };
 
-  const empacarPorSerie = (numeroSerie: string, idCaja: number) => {
-    const caja = cajas.find((c) => c.id === idCaja);
-    if (!caja) return { ok: false, error: 'Caja no encontrada' };
-    if (caja.estado === 'Cerrada') return { ok: false, error: `La caja ${caja.codigo_caja} está CERRADA y sellada.` };
-    if ((caja.piezas_actuales || 0) >= caja.capacidad) return { ok: false, error: `La caja ${caja.codigo_caja} ha alcanzado su capacidad máxima (${caja.capacidad} piezas)` };
-
-    const unidad = unidades.find((u) => u.numero_serie === numeroSerie);
-    if (!unidad) return { ok: false, error: `La unidad con serie ${numeroSerie} no existe en planta` };
-
-    // REGLA 1: Solo unidades en estado APROBADA
-    if (unidad.id_estado_calidad !== EstadosCalidadEnum.APROBADA) {
-      return {
-        ok: false,
-        error: `RECHAZO DE EMPAQUE: La unidad ${numeroSerie} está en estado "${unidad.estado_calidad_nombre}". Sólo unidades APROBADAS por Calidad pueden empacarse.`,
-      };
-    }
-
-    // REGLA 2: No debe estar empacada en otra caja
-    if (unidad.id_caja && unidad.id_caja !== idCaja) {
-      return { ok: false, error: `La unidad ${numeroSerie} ya está asignada a otra caja (#${unidad.id_caja})` };
-    }
-
-    // REGLA 3: Incidente B (Concordancia de Modelo y Color del cliente)
-    if (unidad.modelo && unidad.modelo !== caja.modelo_nombre) {
-      return { ok: false, error: `INCIDENTE B PREVENIDO: La unidad es modelo ${unidad.modelo}, pero la caja es para ${caja.modelo_nombre}.` };
-    }
-
-    const cliente = CATALOGO_CLIENTES.find((c) => c.id === caja.id_cliente);
-    if (cliente && !cliente.permite_mezcla_colores && unidad.color && unidad.color !== caja.color_nombre) {
-      return { ok: false, error: `POLÍTICA DE CLIENTE: El cliente ${cliente.nombre_cliente} no permite mezcla de colores. La unidad es ${unidad.color} y la caja es ${caja.color_nombre}.` };
-    }
-
-    // Registrar en detalle de caja
-    const nuevoSlot = (caja.piezas_actuales || 0) + 1;
-    const nuevoDetalle: DetalleCaja = {
-      id: detallesCajas.length + 1,
+  const empacarPorSerie = async (numeroSerie: string, idCaja: number) => {
+    const res = await cajasApi.empacarPorSerie({
       id_caja: idCaja,
-      id_unidad: unidad.id,
       numero_serie: numeroSerie,
-      slot: nuevoSlot,
-      fecha_empaque: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      id_usuario_empaco: sesion.usuario.id,
-      retirada: false,
-    };
+      id_usuario: sesion.usuario.id,
+    });
+    if (!res.ok) return { ok: false, error: res.error };
 
-    setDetallesCajas((prev) => [...prev, nuevoDetalle]);
-    setCajas((prev) =>
-      prev.map((c) => (c.id === idCaja ? { ...c, piezas_actuales: nuevoSlot } : c))
-    );
-    setUnidades((prev) =>
-      prev.map((u) => (u.numero_serie === numeroSerie ? { ...u, id_caja: idCaja } : u))
-    );
-
-    registrarBitacora('EMPAQUE', `UNIDAD_EMPACADA: ${numeroSerie} -> ${caja.codigo_caja} [Slot ${nuevoSlot}/${caja.capacidad}]`);
+    await cargarOperacionCore();
+    registrarBitacora('EMPAQUE', `UNIDAD_EMPACADA: ${numeroSerie} -> Caja #${idCaja}`);
     return { ok: true };
   };
 
-  const cerrarCaja = (idCaja: number) => {
-    const caja = cajas.find((c) => c.id === idCaja);
-    if (!caja) return { ok: false, error: 'Caja no encontrada' };
-    if ((caja.piezas_actuales || 0) === 0) return { ok: false, error: 'No se puede cerrar una caja vacía' };
+  const cerrarCaja = async (idCaja: number) => {
+    const res = await cajasApi.cerrar(idCaja, sesion.usuario.id);
+    if (!res.ok) return { ok: false, error: res.error };
 
-    setCajas((prev) =>
-      prev.map((c) =>
-        c.id === idCaja
-          ? {
-              ...c,
-              estado: 'Cerrada',
-              fecha_cierre: new Date().toISOString().replace('T', ' ').substring(0, 19),
-              id_usuario_cerro: sesion.usuario.id,
-            }
-          : c
-      )
-    );
-    registrarBitacora('EMPAQUE', `CAJA_CERRADA_SELLADA: ${caja.codigo_caja} con ${caja.piezas_actuales} unidades`);
+    await cargarOperacionCore();
+    registrarBitacora('EMPAQUE', `CAJA_CERRADA_SELLADA: Caja #${idCaja}`);
     return { ok: true };
   };
 
-  const solicitarReaperturaCaja = (idCaja: number, motivo: string) => {
-    const caja = cajas.find((c) => c.id === idCaja);
-    if (!caja) return { ok: false, error: 'Caja no encontrada' };
+  const solicitarReaperturaCaja = async (idCaja: number, motivo: string) => {
     if (!motivo) return { ok: false, error: 'Debe especificar el motivo para solicitar reapertura de caja' };
 
-    const nuevaSol: SolicitudAutorizacion = {
-      id: solicitudesAutorizacion.length + 1,
+    const res = await autorizacionesApi.solicitar({
       tipo: 'REAPERTURA_CAJA',
-      id_entidad: idCaja,
-      descripcion_entidad: `Caja ${caja.codigo_caja} (${caja.modelo_nombre})`,
-      motivo,
+      id_referencia: idCaja,
       id_usuario_solicita: sesion.usuario.id,
-      usuario_solicita_nombre: sesion.usuario.nombre_completo,
-      estado: 'PENDIENTE',
-      fecha_solicitud: new Date().toISOString().replace('T', ' ').substring(0, 16),
-    };
-    setSolicitudesAutorizacion((prev) => [nuevaSol, ...prev]);
-    registrarBitacora('GOBERNANZA', `SOLICITUD_REAPERTURA_CAJA: ${caja.codigo_caja}`, motivo);
+      motivo,
+    });
+    if (!res.ok) return { ok: false, error: res.error };
+
+    await cargarOperacionCore();
+    registrarBitacora('GOBERNANZA', `SOLICITUD_REAPERTURA_CAJA: Caja #${idCaja}`, motivo);
     return { ok: true };
   };
 
-  const retirarUnidadCaja = (idCaja: number, numeroSerie: string, motivo: string) => {
+  const retirarUnidadCaja = async (idCaja: number, numeroSerie: string, motivo: string) => {
     if (!motivo) return { ok: false, error: 'El retiro de una unidad empacada requiere justificación obligatoria' };
-    const caja = cajas.find((c) => c.id === idCaja);
-    if (!caja) return { ok: false, error: 'Caja no encontrada' };
+    const unidad = unidades.find((u) => u.numero_serie.toUpperCase() === numeroSerie.trim().toUpperCase());
+    if (!unidad) return { ok: false, error: `Unidad ${numeroSerie} no encontrada` };
 
-    setDetallesCajas((prev) =>
-      prev.map((d) =>
-        d.id_caja === idCaja && d.numero_serie === numeroSerie
-          ? {
-              ...d,
-              retirada: true,
-              fecha_retiro: new Date().toISOString().replace('T', ' ').substring(0, 16),
-              motivo_retiro: motivo,
-              id_usuario_retiro: sesion.usuario.id,
-            }
-          : d
-      )
-    );
+    const res = await cajasApi.retirarUnidad(idCaja, {
+      id_unidad: unidad.id,
+      id_usuario: sesion.usuario.id,
+      motivo,
+    });
+    if (!res.ok) return { ok: false, error: res.error };
 
-    setCajas((prev) =>
-      prev.map((c) =>
-        c.id === idCaja ? { ...c, piezas_actuales: Math.max(0, (c.piezas_actuales || 1) - 1) } : c
-      )
-    );
-
-    setUnidades((prev) =>
-      prev.map((u) => (u.numero_serie === numeroSerie ? { ...u, id_caja: null } : u))
-    );
-
-    registrarBitacora('EMPAQUE', `RETIRO_UNIDAD: Serie ${numeroSerie} retirada de ${caja.codigo_caja}`, motivo);
+    await cargarOperacionCore();
+    registrarBitacora('EMPAQUE', `RETIRO_UNIDAD: Serie ${numeroSerie} retirada de Caja #${idCaja}`, motivo);
     return { ok: true };
   };
 
   // ==============================================================================
   // MÓDULO 6: EMBARQUES (F-10, F-11, P-26..P-29, Incidente C)
   // ==============================================================================
-  const crearEmbarque = (
+  const crearEmbarque = async (
     idPedido: string,
     idCliente: number,
     idTransportista: number,
@@ -1002,136 +1292,63 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     fechaProgramada: string,
     observaciones?: string
   ) => {
-    const cliente = CATALOGO_CLIENTES.find((c) => c.id === idCliente);
-    const transportista = CATALOGO_TRANSPORTISTAS.find((t) => t.id === idTransportista);
-
-    const nuevo: Embarque = {
-      id: embarques.length + 1,
-      referencia_embarque: `EMB-2026-${(embarques.length + 100).toString()}`,
+    const res = await embarquesApi.create({
       id_pedido: idPedido || `PED-${Date.now().toString().slice(-4)}`,
       id_cliente: idCliente,
-      cliente_nombre: cliente?.nombre_cliente || 'Cliente',
       id_transportista: idTransportista,
-      transportista_nombre: transportista?.nombre || 'Transportista',
       nombre_chofer: nombreChofer || 'Chofer Asignado',
       placas_unidad: placasUnidad || 'PL-000-XX',
       fecha_programada: fechaProgramada || '2026-11-05 10:00',
-      fecha_salida: null,
-      estado: 'Programado',
-      observaciones: observaciones || null,
+      observaciones: observaciones || undefined,
       id_usuario_creo: sesion.usuario.id,
-      id_usuario_confirmo: null,
-      fecha_creacion: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      total_cajas: 0,
-      total_piezas: 0,
-    };
+    });
+    if (!res.ok) return { ok: false, error: res.error };
 
-    setEmbarques((prev) => [nuevo, ...prev]);
-    registrarBitacora('EMBARQUES', `PROGRAMAR_EMBARQUE: ${nuevo.referencia_embarque} para ${cliente?.nombre_cliente}`);
-    return { ok: true, embarque: nuevo };
+    await cargarOperacionCore();
+    registrarBitacora('EMBARQUES', `PROGRAMAR_EMBARQUE: ${res.data?.referencia_embarque || idPedido}`);
+    return { ok: true, embarque: res.data };
   };
 
-  const asignarCajaEmbarque = (idEmbarque: number, idCaja: number) => {
-    const embarque = embarques.find((e) => e.id === idEmbarque);
-    const caja = cajas.find((c) => c.id === idCaja);
+  const asignarCajaEmbarque = async (idEmbarque: number, idCaja: number) => {
+    const res = await embarquesApi.asignarCaja({
+      id_embarque: idEmbarque,
+      id_caja: idCaja,
+      id_usuario: sesion.usuario.id,
+    });
+    if (!res.ok) return { ok: false, error: res.error };
 
-    if (!embarque || !caja) return { ok: false, error: 'Embarque o caja no localizados' };
-    if (caja.estado !== 'Cerrada') return { ok: false, error: `Sólo cajas CERRADAS y selladas pueden asignarse al embarque` };
-    if (caja.id_cliente !== embarque.id_cliente) {
-      return { ok: false, error: `ERROR DE CLIENTE: La caja pertenece a ${caja.cliente_nombre}, no coincide con ${embarque.cliente_nombre}` };
-    }
-
-    const actuales = cajasAsignadasEmbarque[idEmbarque] || [];
-    if (actuales.includes(idCaja)) return { ok: false, error: 'La caja ya está asignada a este embarque' };
-
-    setCajasAsignadasEmbarque((prev) => ({
-      ...prev,
-      [idEmbarque]: [...actuales, idCaja],
-    }));
-
-    setCajas((prev) =>
-      prev.map((c) => (c.id === idCaja ? { ...c, id_embarque_asignado: idEmbarque } : c))
-    );
-
-    setEmbarques((prev) =>
-      prev.map((e) =>
-        e.id === idEmbarque
-          ? {
-              ...e,
-              total_cajas: (e.total_cajas || 0) + 1,
-              total_piezas: (e.total_piezas || 0) + (caja.piezas_actuales || 0),
-            }
-          : e
-      )
-    );
-
-    registrarBitacora('EMBARQUES', `ASIGNAR_CAJA: ${caja.codigo_caja} -> Embarque ${embarque.referencia_embarque}`);
+    setCajasAsignadasEmbarque((prev) => {
+      const actuales = prev[idEmbarque] || [];
+      return actuales.includes(idCaja) ? prev : { ...prev, [idEmbarque]: [...actuales, idCaja] };
+    });
+    await cargarOperacionCore();
+    registrarBitacora('EMBARQUES', `ASIGNAR_CAJA: Caja #${idCaja} -> Embarque #${idEmbarque}`);
     return { ok: true };
   };
 
-  const retirarCajaEmbarque = (idEmbarque: number, idCaja: number) => {
-    const actuales = cajasAsignadasEmbarque[idEmbarque] || [];
-    const caja = cajas.find((c) => c.id === idCaja);
+  const retirarCajaEmbarque = async (idEmbarque: number, idCaja: number) => {
+    const res = await embarquesApi.retirarCaja({
+      id_embarque: idEmbarque,
+      id_caja: idCaja,
+      id_usuario: sesion.usuario.id,
+      motivo: 'Retiro de andén desde estación de embarques',
+    });
+    if (!res.ok) return { ok: false, error: res.error };
 
     setCajasAsignadasEmbarque((prev) => ({
       ...prev,
-      [idEmbarque]: actuales.filter((id) => id !== idCaja),
+      [idEmbarque]: (prev[idEmbarque] || []).filter((id) => id !== idCaja),
     }));
-
-    setCajas((prev) =>
-      prev.map((c) => (c.id === idCaja ? { ...c, id_embarque_asignado: null } : c))
-    );
-
-    setEmbarques((prev) =>
-      prev.map((e) =>
-        e.id === idEmbarque
-          ? {
-              ...e,
-              total_cajas: Math.max(0, (e.total_cajas || 1) - 1),
-              total_piezas: Math.max(0, (e.total_piezas || 0) - (caja?.piezas_actuales || 0)),
-            }
-          : e
-      )
-    );
-
+    await cargarOperacionCore();
     return { ok: true };
   };
 
-  const despacharEmbarque = (idEmbarque: number) => {
-    const embarque = embarques.find((e) => e.id === idEmbarque);
-    if (!embarque) return { ok: false, error: 'Embarque no encontrado' };
+  const despacharEmbarque = async (idEmbarque: number) => {
+    const res = await embarquesApi.despachar(idEmbarque, sesion.usuario.id);
+    if (!res.ok) return { ok: false, error: res.error };
 
-    const cajasIds = cajasAsignadasEmbarque[idEmbarque] || [];
-    if (cajasIds.length === 0) return { ok: false, error: 'El embarque no contiene cajas asignadas' };
-
-    // VALIDACIÓN ESTRICTA INCIDENTE C (Revalidación de Calidad en tiempo real):
-    // Ninguna unidad dentro de las cajas del embarque debe estar en retención o scrap
-    for (const cId of cajasIds) {
-      const unidadesEnCaja = unidades.filter((u) => u.id_caja === cId);
-      for (const u of unidadesEnCaja) {
-        if (u.id_estado_calidad !== EstadosCalidadEnum.APROBADA) {
-          return {
-            ok: false,
-            error: `INCIDENTE C BLOQUEADO: La unidad ${u.numero_serie} dentro de la caja #${cId} está en estado "${u.estado_calidad_nombre}". No se permite despachar embarque con unidades retenidas.`,
-          };
-        }
-      }
-    }
-
-    setEmbarques((prev) =>
-      prev.map((e) =>
-        e.id === idEmbarque
-          ? {
-              ...e,
-              estado: 'Despachado',
-              fecha_salida: new Date().toISOString().replace('T', ' ').substring(0, 19),
-              id_usuario_confirmo: sesion.usuario.id,
-            }
-          : e
-      )
-    );
-
-    registrarBitacora('EMBARQUES', `DESPACHO_CONFIRMADO: Embarque ${embarque.referencia_embarque} liberado en andén`);
+    await cargarOperacionCore();
+    registrarBitacora('EMBARQUES', `EMBARQUE_DESPACHADO: Embarque #${idEmbarque}`);
     return { ok: true };
   };
 
@@ -1164,112 +1381,80 @@ export const PlantaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // ==============================================================================
   // MÓDULO 8: CIERRE DE TURNO Y GOBERNANZA (P-35, P-43, INC-A, INC-D)
   // ==============================================================================
-  const consolidarCierreTurno = (observaciones?: string) => {
-    // Cálculo en vivo de métricas de la línea y turno actuales
-    const ensambladas = conteosEnsamble
-      .filter((c) => c.id_linea === sesion.linea.id && c.id_turno === sesion.turno.id)
-      .reduce((sum, c) => sum + c.cantidad, 0);
-
-    const probadas = pruebasFuncionales.filter((p) => p.id_linea === sesion.linea.id && p.id_turno === sesion.turno.id).length;
-    const liberadas = unidades.filter((u) => u.id_linea === sesion.linea.id && u.id_turno === sesion.turno.id && u.id_estado_calidad === EstadosCalidadEnum.APROBADA).length;
-    const retrabajo = unidades.filter((u) => u.id_linea === sesion.linea.id && u.id_turno === sesion.turno.id && u.id_estado_calidad === EstadosCalidadEnum.EN_RETRABAJO).length;
-    const retencion = unidades.filter((u) => u.id_linea === sesion.linea.id && u.id_turno === sesion.turno.id && u.id_estado_calidad === EstadosCalidadEnum.EN_RETENCION).length;
-    const scrap = unidades.filter((u) => u.id_linea === sesion.linea.id && u.id_turno === sesion.turno.id && u.id_estado_calidad === EstadosCalidadEnum.SCRAP).length;
-
-    // Unidades empacadas en cajas cerradas
-    const empacadas = detallesCajas.filter((d) => !d.retirada).length;
-    const embarcadas = embarques.filter((e) => e.estado === 'Despachado').reduce((sum, e) => sum + (e.total_piezas || 0), 0);
-
-    const diferenciaBalance = ensambladas - liberadas; // Incidente A (rastreo de piezas en proceso)
-
-    const nuevoCierre: CierreTurno = {
-      id: cierresTurno.length + 1,
+  const consolidarCierreTurno = async (observaciones?: string) => {
+    const res = await turnosApi.consolidarCierre({
       fecha: new Date().toISOString().substring(0, 10),
       id_turno: sesion.turno.id,
-      turno_nombre: sesion.turno.nombre_turno,
       id_linea: sesion.linea.id,
-      linea_nombre: sesion.linea.nombre_linea,
-      id_lider_linea: sesion.usuario.id,
-      lider_nombre: sesion.usuario.nombre_completo,
-      piezas_ensambladas: ensambladas || 48,
-      piezas_probadas: probadas || 45,
-      piezas_aprobadas_calidad: liberadas || 42,
-      piezas_retrabajo: retrabajo || 2,
-      piezas_retencion: retencion || 1,
-      piezas_scrap: scrap || 0,
-      piezas_empacadas: empacadas || 8,
-      piezas_embarcadas: embarcadas || 6,
-      diferencia_balance: diferenciaBalance,
-      objetivo_turno: 100,
-      cumplimiento_pct: Math.round(((ensambladas || 48) / 100) * 100),
-      estado: 'Cerrado',
+      id_lider: sesion.usuario.id,
       observaciones: observaciones || 'Cierre formal de turno consolidado por Líder de Línea',
-      fecha_cierre: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    };
+    });
+    if (!res.ok) return { ok: false, error: res.error };
 
-    setCierresTurno((prev) => [nuevoCierre, ...prev]);
-    registrarBitacora('TURNOS', `CIERRE_FORMAL_TURNO: ${sesion.linea.nombre_linea} - Turno ${sesion.turno.nombre_turno} (${nuevoCierre.cumplimiento_pct}% obj)`);
-    return { ok: true, cierre: nuevoCierre };
+    await cargarOperacionCore();
+    registrarBitacora('TURNOS', `CIERRE_FORMAL_TURNO: ${sesion.linea.nombre_linea} - Turno ${sesion.turno.nombre_turno}`);
+    return { ok: true, cierre: res.data?.data || res.data };
   };
 
-  const solicitarCorreccionCierre = (idCierre: number, motivo: string) => {
+  const solicitarCorreccionCierre = async (idCierre: number, motivo: string) => {
     if (!motivo) return { ok: false, error: 'Debe especificar el motivo del ajuste del cierre' };
-    const cierre = cierresTurno.find((c) => c.id === idCierre);
-    if (!cierre) return { ok: false, error: 'Cierre no encontrado' };
-
-    const nuevaSol: SolicitudAutorizacion = {
-      id: solicitudesAutorizacion.length + 1,
-      tipo: 'CORRECCION_CIERRE_TURNO',
-      id_entidad: idCierre,
-      descripcion_entidad: `Cierre #${idCierre} - Línea ${cierre.linea_nombre} (${cierre.fecha})`,
-      motivo,
+    const res = await autorizacionesApi.solicitar({
+      tipo: 'AJUSTE_CIERRE',
+      id_referencia: idCierre,
       id_usuario_solicita: sesion.usuario.id,
-      usuario_solicita_nombre: sesion.usuario.nombre_completo,
-      estado: 'PENDIENTE',
-      fecha_solicitud: new Date().toISOString().replace('T', ' ').substring(0, 16),
-    };
+      motivo,
+    });
+    if (!res.ok) return { ok: false, error: res.error };
 
-    setSolicitudesAutorizacion((prev) => [nuevaSol, ...prev]);
+    await cargarOperacionCore();
     registrarBitacora('GOBERNANZA', `SOLICITUD_CORRECCION_CIERRE: Cierre #${idCierre}`, motivo);
     return { ok: true };
   };
 
-  const resolverAutorizacion = (idSolicitud: number, accion: 'APROBADA' | 'RECHAZADA', comentarios?: string) => {
-    const sol = solicitudesAutorizacion.find((s) => s.id === idSolicitud);
-    if (!sol) return { ok: false, error: 'Solicitud no encontrada' };
+  const resolverAutorizacion = async (idSolicitud: number, accion: 'APROBADA' | 'RECHAZADA', comentarios?: string) => {
+    const res = await autorizacionesApi.resolver(idSolicitud, {
+      estado: accion,
+      id_usuario_autoriza: sesion.usuario.id,
+      comentario_resolucion: comentarios || 'Resolución desde estación de gobernanza',
+    });
+    if (!res.ok) return { ok: false, error: res.error };
 
-    setSolicitudesAutorizacion((prev) =>
-      prev.map((s) =>
-        s.id === idSolicitud
-          ? {
-              ...s,
-              estado: accion,
-              id_usuario_autoriza: sesion.usuario.id,
-              usuario_autoriza_nombre: sesion.usuario.nombre_completo,
-              fecha_resolucion: new Date().toISOString().replace('T', ' ').substring(0, 16),
-              comentarios_resolucion: comentarios,
-            }
-          : s
-      )
-    );
-
-    // Si fue reapertura aprobada, reabrir la caja
-    if (sol.tipo === 'REAPERTURA_CAJA' && accion === 'APROBADA') {
-      setCajas((prev) =>
-        prev.map((c) => (c.id === sol.id_entidad ? { ...c, estado: 'Abierta', fecha_cierre: null } : c))
-      );
-    }
-
+    await cargarOperacionCore();
     registrarBitacora('GOBERNANZA', `RESOLUCION_AUTORIZACION: Solicitud #${idSolicitud} -> ${accion}`, comentarios);
     return { ok: true };
+  };
+
+  const consultarTrazabilidadRemota = async (numeroSerie: string) => {
+    const local = buscarTrazabilidad(numeroSerie);
+    if (local) return local;
+    const res = await unidadesApi.getTrazabilidad(numeroSerie.trim().toUpperCase());
+    if (!res.ok || !res.data?.unidad) return null;
+    const d = res.data;
+    return {
+      unidad: d.unidad,
+      orden: d.orden || undefined,
+      prueba: d.prueba_funcional || undefined,
+      inspecciones: Array.isArray(d.inspecciones) ? d.inspecciones : [],
+      historial: Array.isArray(d.historial) ? d.historial : [],
+      caja: d.caja || undefined,
+      embarque: d.embarque || undefined,
+    };
   };
 
   const value: PlantaContextType = {
     sesion,
     setSesion,
     estaAutenticado,
+    backendOnline,
     modoMantenimiento,
     mensajeMantenimiento,
+    vistaActual,
+    setVistaActual,
+    serieTrazabilidad,
+    abrirTrazabilidad,
+    sincronizarAhora: cargarOperacionCore,
+    consultarTrazabilidadRemota,
+    tienePermiso,
     iniciarSesion,
     cerrarSesion,
     cambiarUsuarioSimulado,

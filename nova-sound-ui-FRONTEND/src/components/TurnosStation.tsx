@@ -38,9 +38,9 @@ export default function TurnosStation() {
   const diferenciaEnsamblePrueba = piezasEnsambladas - piezasProbadas;
   const diferenciaPruebaCalidad = piezasProbadas - piezasLiberadas;
 
-  const handleConsolidar = (e: React.FormEvent) => {
+  const handleConsolidar = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = consolidarCierreTurno(observacionesCierre);
+    const res = await consolidarCierreTurno(observacionesCierre);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Cierre formal de turno consolidado exitosamente` });
       setObservacionesCierre('');
@@ -49,8 +49,8 @@ export default function TurnosStation() {
     }
   };
 
-  const handleSolicitarCorreccion = () => {
-    const res = solicitarCorreccionCierre(cierreSeleccionadoId, motivoCorreccion);
+  const handleSolicitarCorreccion = async () => {
+    const res = await solicitarCorreccionCierre(cierreSeleccionadoId, motivoCorreccion);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Solicitud de corrección enviada a Gerencia de Producción` });
       setModalCorreccion(false);
@@ -79,12 +79,12 @@ export default function TurnosStation() {
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">07</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[GOBERNANZA // CIERRE DE TURNO Y AUDITORÍA]</span>
+            <span className="station-badge-code">Módulo 07 · Cierre de Turno y Auditoría</span>
             <h1 className="station-title">Cierre Formal de Turno y Autorizaciones</h1>
             <span className="station-subtitle">
               Balance de discrepancias por etapa (Incidente A) y control de correcciones (Incidente D)
@@ -123,13 +123,13 @@ export default function TurnosStation() {
           </div>
           <div className="panel-body">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', textAlign: 'center' }}>
-              <div style={{ background: 'var(--dark-700)', padding: '1rem', border: '1px solid var(--dark-500)' }}>
+              <div style={{ background: 'var(--bg-surface-elevated)', padding: '1rem', border: '1px solid var(--border-default)' }}>
                 <span className="kpi-label">1. ENSAMBLADAS</span>
-                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff' }}>{piezasEnsambladas}</div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--gray-300)' }}>Piezas brutas</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)' }}>{piezasEnsambladas}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Piezas brutas</div>
               </div>
 
-              <div style={{ background: 'var(--dark-700)', padding: '1rem', border: '1px solid var(--dark-500)' }}>
+              <div style={{ background: 'var(--bg-surface-elevated)', padding: '1rem', border: '1px solid var(--border-default)' }}>
                 <span className="kpi-label">2. PROBADAS</span>
                 <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--info)' }}>{piezasProbadas}</div>
                 <div style={{ fontSize: '0.65rem', color: 'var(--warn)' }}>
@@ -137,23 +137,23 @@ export default function TurnosStation() {
                 </div>
               </div>
 
-              <div style={{ background: 'var(--dark-700)', padding: '1rem', border: '1px solid var(--dark-500)' }}>
+              <div style={{ background: 'var(--bg-surface-elevated)', padding: '1rem', border: '1px solid var(--border-default)' }}>
                 <span className="kpi-label">3. LIBERADAS CALIDAD</span>
                 <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--ok)' }}>{piezasLiberadas}</div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--gray-300)' }}>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                   Dif: -{diferenciaPruebaCalidad} ({piezasRetrabajo} retrabajo | {piezasRetencion} retención)
                 </div>
               </div>
 
-              <div style={{ background: 'var(--dark-700)', padding: '1rem', border: '1px solid var(--dark-500)' }}>
+              <div style={{ background: 'var(--bg-surface-elevated)', padding: '1rem', border: '1px solid var(--border-default)' }}>
                 <span className="kpi-label">4. EMPACADAS</span>
-                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff' }}>{piezasEmpacadas}</div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--gray-300)' }}>En cajas selladas</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)' }}>{piezasEmpacadas}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>En cajas selladas</div>
               </div>
 
-              <div style={{ background: 'var(--dark-700)', padding: '1rem', border: '1px solid var(--dark-500)' }}>
+              <div style={{ background: 'var(--bg-surface-elevated)', padding: '1rem', border: '1px solid var(--border-default)' }}>
                 <span className="kpi-label">5. EMBARCADAS</span>
-                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent)' }}>{piezasEmbarcadas}</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--carbon-900)' }}>{piezasEmbarcadas}</div>
                 <div style={{ fontSize: '0.65rem', color: 'var(--ok)' }}>Despachadas en andén</div>
               </div>
             </div>
@@ -181,7 +181,7 @@ export default function TurnosStation() {
                     Objetivo Nominal: <strong>100 unidades</strong>
                   </div>
                   <div>
-                    Cumplimiento Real: <strong style={{ color: 'var(--accent)' }}>{Math.round((piezasEnsambladas / 100) * 100)}%</strong>
+                    Cumplimiento Real: <strong style={{ color: 'var(--carbon-900)' }}>{Math.round((piezasEnsambladas / 100) * 100)}%</strong>
                   </div>
                 </div>
 
@@ -211,7 +211,7 @@ export default function TurnosStation() {
             </div>
             <div className="panel-body">
               {solicitudesAutorizacion.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem 0', fontSize: '0.85rem' }}>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 0', fontSize: '0.85rem' }}>
                   [NO HAY SOLICITUDES PENDIENTES DE AUTORIZACIÓN]
                 </div>
               ) : (
@@ -220,8 +220,8 @@ export default function TurnosStation() {
                     <div
                       key={sol.id}
                       style={{
-                        background: 'var(--dark-700)',
-                        border: '1px solid var(--dark-500)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-default)',
                         borderLeft: `4px solid ${
                           sol.estado === 'PENDIENTE'
                             ? 'var(--accent)'
@@ -233,7 +233,7 @@ export default function TurnosStation() {
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#fff' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-main)' }}>
                           [{sol.tipo}] {sol.descripcion_entidad}
                         </span>
                         <span
@@ -248,10 +248,10 @@ export default function TurnosStation() {
                           {sol.estado}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--gray-300)', marginBottom: '0.4rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
                         Solicitó: <strong>{sol.usuario_solicita_nombre}</strong> | {sol.fecha_solicitud}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--gray-200)', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontStyle: 'italic', marginBottom: '0.5rem' }}>
                         "{sol.motivo}"
                       </div>
 
@@ -326,7 +326,7 @@ export default function TurnosStation() {
                         {c.diferencia_balance} pzas
                       </td>
                       <td>
-                        <span style={{ fontWeight: 800, color: 'var(--accent)' }}>{c.cumplimiento_pct}%</span>
+                        <span style={{ fontWeight: 800, color: 'var(--carbon-900)' }}>{c.cumplimiento_pct}%</span>
                       </td>
                       <td>
                         <span className="badge badge-ok">{c.estado}</span>
@@ -343,7 +343,7 @@ export default function TurnosStation() {
       {/* MODAL SOLICITAR CORRECCIÓN */}
       {modalCorreccion && (
         <div className="modal-overlay">
-          <div className="modal-content tex-carbon">
+          <div className="modal-content">
             <span className="station-title" style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'block' }}>
               SOLICITAR AJUSTE / CORRECCIÓN DE CIERRE (RN-11)
             </span>

@@ -20,15 +20,15 @@ export default function ConfiguracionStation() {
   const [nuevoMensajeMantenimiento, setNuevoMensajeMantenimiento] = useState(mensajeMantenimiento);
   const [mensajeLocal, setMensajeLocal] = useState<string | null>(null);
 
-  const handleGuardarParametros = (e: React.FormEvent) => {
+  const handleGuardarParametros = async (e: React.FormEvent) => {
     e.preventDefault();
-    setModoMantenimiento(modoMantenimiento, nuevoMensajeMantenimiento);
+    await setModoMantenimiento(modoMantenimiento, nuevoMensajeMantenimiento);
     setMensajeLocal('Parámetros de planta actualizados con éxito.');
   };
 
-  const toggleMantenimiento = () => {
+  const toggleMantenimiento = async () => {
     const nuevoEstado = !modoMantenimiento;
-    setModoMantenimiento(nuevoEstado, nuevoMensajeMantenimiento);
+    await setModoMantenimiento(nuevoEstado, nuevoMensajeMantenimiento);
     setMensajeLocal(
       nuevoEstado
         ? 'AVISO DE MANTENIMIENTO ACTIVADO EN TODAS LAS TERMINALES'
@@ -38,12 +38,12 @@ export default function ConfiguracionStation() {
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">SYS</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[SISTEMAS_ADMIN // GOBERNANZA BASE DE DATOS]</span>
+            <span className="station-badge-code">Administración · Configuración del Sistema</span>
             <h1 className="station-title">Configuración, Catálogos y Parámetros</h1>
             <span className="station-subtitle">
               Administración de los 9 roles oficiales, aviso de mantenimiento y bitácora técnica
@@ -78,7 +78,7 @@ export default function ConfiguracionStation() {
         )}
 
         {/* SUBNAVEGACIÓN DE PESTAÑAS */}
-        <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid var(--dark-600)', paddingBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid var(--border-default)', paddingBottom: '0.5rem' }}>
           {[
             { id: 'usuarios', label: '1. Los 9 Roles y Usuarios (P-37)' },
             { id: 'parametros', label: '2. Parámetros y Mantenimiento (P-39)' },
@@ -119,7 +119,7 @@ export default function ConfiguracionStation() {
                   <tbody>
                     {USUARIOS_OFICIALES.map((u) => (
                       <tr key={u.id}>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent)' }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--carbon-900)' }}>
                           {u.nomina}
                         </td>
                         <td style={{ fontWeight: 700 }}>{u.nombre_completo}</td>
@@ -132,7 +132,7 @@ export default function ConfiguracionStation() {
                         <td>
                           <span className="badge badge-ok">ACTIVO</span>
                         </td>
-                        <td style={{ fontSize: '0.75rem', color: 'var(--gray-300)' }}>
+                        <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           {u.id_rol <= 3 ? 'Piso de Producción' : u.id_rol <= 5 ? 'Almacén y Envíos' : 'Gerencia y Sistemas'}
                         </td>
                       </tr>
@@ -156,11 +156,11 @@ export default function ConfiguracionStation() {
               </div>
               <div className="panel-body">
                 <form onSubmit={handleGuardarParametros} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <div style={{ background: modoMantenimiento ? 'var(--danger-bg)' : 'var(--dark-700)', padding: '1rem', border: '1px solid var(--dark-500)' }}>
+                  <div style={{ background: modoMantenimiento ? 'var(--danger-bg)' : 'var(--bg-surface-elevated)', padding: '1rem', border: '1px solid var(--border-default)' }}>
                     <div style={{ fontWeight: 700, marginBottom: '0.25rem', color: modoMantenimiento ? 'var(--danger)' : '#fff' }}>
                       Estado Actual: {modoMantenimiento ? 'AVISO ACTIVO EN TODAS LAS PANTALLAS' : 'OPERACIÓN NORMAL'}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--gray-300)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       Al activar el aviso, se despliega una franja de advertencia en el encabezado general notificando a operadores e inspectores.
                     </div>
                   </div>
@@ -187,7 +187,7 @@ export default function ConfiguracionStation() {
                 <span className="panel-title">POLÍTICAS GENERALES DE CONSERVACIÓN (RNF-08)</span>
                 <span className="badge badge-accent">RETENTION_RULES</span>
               </div>
-              <div className="panel-body" style={{ fontSize: '0.85rem', lineHeight: 1.7, color: 'var(--gray-200)' }}>
+              <div className="panel-body" style={{ fontSize: '0.85rem', lineHeight: 1.7, color: 'var(--text-main)' }}>
                 <p>
                   <strong>Conservación de Trazabilidad:</strong> Mínimo <strong>2 años</strong> de histórico para
                   todas las unidades, pruebas funcionales y registros de inspección según RNF-08.
@@ -226,9 +226,9 @@ export default function ConfiguracionStation() {
                   <tbody>
                     {CATALOGO_MODELOS.map((m) => (
                       <tr key={m.id}>
-                        <td style={{ fontWeight: 700, color: 'var(--accent)' }}>{m.nombre_modelo}</td>
+                        <td style={{ fontWeight: 700, color: 'var(--carbon-900)' }}>{m.nombre_modelo}</td>
                         <td style={{ fontFamily: 'var(--font-mono)' }}>{m.capacidad_caja} pzas / caja</td>
-                        <td style={{ fontSize: '0.75rem', color: 'var(--gray-300)' }}>{m.descripcion}</td>
+                        <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.descripcion}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -349,8 +349,8 @@ export default function ConfiguracionStation() {
                           <span className="badge badge-dark">{b.modulo}</span>
                         </td>
                         <td style={{ fontWeight: 600 }}>{b.usuario_nombre}</td>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>{b.accion}</td>
-                        <td style={{ color: 'var(--gray-300)' }}>{b.motivo || '--'}</td>
+                        <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--carbon-900)' }}>{b.accion}</td>
+                        <td style={{ color: 'var(--text-muted)' }}>{b.motivo || '--'}</td>
                       </tr>
                     ))}
                   </tbody>

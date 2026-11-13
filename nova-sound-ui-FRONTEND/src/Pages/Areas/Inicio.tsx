@@ -17,12 +17,12 @@ export default function Inicio() {
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">00</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[SCADA_HMI // TELEMETRÍA DE PLANTA]</span>
+            <span className="station-badge-code">Resumen General de Planta</span>
             <h1 className="station-title">Centro de Telemetría y Operaciones</h1>
             <span className="station-subtitle">
               Estado de piso de manufactura en tiempo real | Línea: {sesion.linea.nombre_linea} | Turno: {sesion.turno.nombre_turno}
@@ -31,11 +31,11 @@ export default function Inicio() {
         </div>
         <div className="station-header-right">
           <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--carbon-900)', textTransform: 'uppercase' }}>
               ESTADO DEL SISTEMA:
             </span>
             <div style={{ fontSize: '1.2rem', fontWeight: 800, color: modoMantenimiento ? 'var(--danger)' : 'var(--ok)' }}>
-              {modoMantenimiento ? '[EN MANTENIMIENTO]' : '[ONLINE // OPERATIVO]'}
+              {modoMantenimiento ? 'En mantenimiento' : 'En operación'}
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function Inicio() {
           <div className="kpi-card">
             <span className="kpi-label">CAJAS LISTAS PARA EMBARQUE</span>
             <span className="kpi-value">{cajasCerradas}</span>
-            <span className="kpi-delta" style={{ color: 'var(--accent)' }}>
+            <span className="kpi-delta" style={{ color: 'var(--carbon-900)' }}>
               [Selladas y verificadas]
             </span>
           </div>
@@ -93,9 +93,9 @@ export default function Inicio() {
                   <div
                     key={num}
                     style={{
-                      background: 'var(--dark-700)',
-                      border: `1px solid ${esActiva ? 'var(--accent)' : 'var(--dark-500)'}`,
-                      borderLeft: `5px solid ${esActiva ? 'var(--accent)' : 'var(--gray-400)'}`,
+                      background: 'var(--bg-surface-elevated)',
+                      border: `1px solid ${esActiva ? 'var(--accent)' : 'var(--border-default)'}`,
+                      borderLeft: `5px solid ${esActiva ? 'var(--accent)' : 'var(--text-muted)'}`,
                       padding: '1.25rem',
                       display: 'flex',
                       flexDirection: 'column',
@@ -103,7 +103,7 @@ export default function Inicio() {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>
+                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-main)' }}>
                         LÍNEA 0{num}
                       </span>
                       <span className={`badge ${esActiva ? 'badge-accent' : 'badge-dark'}`}>
@@ -111,10 +111,10 @@ export default function Inicio() {
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '0.8rem', color: 'var(--gray-200)', lineHeight: 1.6 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-main)', lineHeight: 1.6 }}>
                       <div>
                         Orden activa:{' '}
-                        <strong style={{ color: 'var(--accent)' }}>
+                        <strong style={{ color: 'var(--carbon-900)' }}>
                           {ordAsignada ? ordAsignada.folio : 'Sin orden asignada'}
                         </strong>
                       </div>
@@ -162,7 +162,7 @@ export default function Inicio() {
                   <tbody>
                     {ordenes.map((ord) => (
                       <tr key={ord.id}>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent)' }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--carbon-900)' }}>
                           {ord.folio}
                         </td>
                         <td>{ord.cliente_nombre}</td>
@@ -200,7 +200,7 @@ export default function Inicio() {
             </div>
             <div className="panel-body">
               {cierresTurno.length === 0 ? (
-                <div style={{ color: 'var(--gray-400)', fontSize: '0.8rem', textAlign: 'center', padding: '2rem 0' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', padding: '2rem 0' }}>
                   [SIN CIERRES CONSOLIDADOS PREVIOS]
                 </div>
               ) : (
@@ -209,21 +209,21 @@ export default function Inicio() {
                     <div
                       key={c.id}
                       style={{
-                        background: 'var(--dark-700)',
+                        background: 'var(--bg-surface-elevated)',
                         borderLeft: '4px solid var(--ok)',
                         padding: '0.75rem 1rem',
                         fontSize: '0.8rem',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                        <strong style={{ color: '#fff' }}>
+                        <strong style={{ color: 'var(--text-main)' }}>
                           Línea {c.linea_nombre} - Turno {c.turno_nombre}
                         </strong>
-                        <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)', fontWeight: 800 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--carbon-900)', fontWeight: 800 }}>
                           {c.cumplimiento_pct}%
                         </span>
                       </div>
-                      <div style={{ color: 'var(--gray-300)', fontSize: '0.75rem' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                         Líder: {c.lider_nombre} | Ensambladas: {c.piezas_ensambladas} | Liberadas: {c.piezas_aprobadas_calidad}
                       </div>
                     </div>

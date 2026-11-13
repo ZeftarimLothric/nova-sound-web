@@ -31,13 +31,13 @@ export default function EnsambleStation() {
     .filter((d) => d.id_linea === sesion.linea.id && d.id_turno === sesion.turno.id)
     .reduce((sum, d) => sum + d.cantidad, 0);
 
-  const handleRegistrarConteo = (e: React.FormEvent) => {
+  const handleRegistrarConteo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ordenActiva) {
       setMensaje({ tipo: 'err', texto: 'Seleccione una orden válida' });
       return;
     }
-    const res = registrarConteoEnsamble(ordenActiva.id, cantidadPiezas);
+    const res = await registrarConteoEnsamble(ordenActiva.id, cantidadPiezas);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Conteo registrado: +${cantidadPiezas} piezas en orden ${ordenActiva.folio}` });
     } else {
@@ -45,10 +45,10 @@ export default function EnsambleStation() {
     }
   };
 
-  const handleRegistrarDefecto = (e: React.FormEvent) => {
+  const handleRegistrarDefecto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ordenActiva) return;
-    const res = registrarDefectoEnsamble(ordenActiva.id, defectoId, cantidadDefectos, obsDefecto);
+    const res = await registrarDefectoEnsamble(ordenActiva.id, defectoId, cantidadDefectos, obsDefecto);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Defecto de ensamble registrado correctamente` });
       setObsDefecto('');
@@ -59,12 +59,12 @@ export default function EnsambleStation() {
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">02</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[ESTACIÓN_01 // CONTEO DE LÍNEA]</span>
+            <span className="station-badge-code">Módulo 02 · Conteo de Línea</span>
             <h1 className="station-title">Ensamble Mecánico y Estructural</h1>
             <span className="station-subtitle">
               Línea activa: {sesion.linea.nombre_linea} | Turno: {sesion.turno.nombre_turno} | Operador: {sesion.usuario.nombre_completo}
@@ -73,10 +73,10 @@ export default function EnsambleStation() {
         </div>
         <div className="station-header-right">
           <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--carbon-900)', textTransform: 'uppercase' }}>
               OBJETIVO DEL TURNO:
             </span>
-            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>
               {totalPiezasTurno} / 100 PZAS
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function EnsambleStation() {
             <span className="kpi-value" style={{ fontSize: '1.4rem' }}>
               {ordenActiva?.folio || 'N/A'}
             </span>
-            <span className="kpi-delta" style={{ color: 'var(--accent)' }}>
+            <span className="kpi-delta" style={{ color: 'var(--carbon-900)' }}>
               {ordenActiva?.modelo_nombre} - {ordenActiva?.color_nombre}
             </span>
           </div>
@@ -130,7 +130,7 @@ export default function EnsambleStation() {
             <span className="kpi-value" style={{ fontSize: '1.4rem' }}>
               {ordenActiva ? `${ordenActiva.piezas_ensambladas || 0} / ${ordenActiva.cantidad}` : '0 / 0'}
             </span>
-            <span className="kpi-delta" style={{ color: 'var(--gray-300)' }}>
+            <span className="kpi-delta" style={{ color: 'var(--text-muted)' }}>
               Destino: {ordenActiva?.cliente_nombre || 'N/A'}
             </span>
           </div>
@@ -171,7 +171,7 @@ export default function EnsambleStation() {
                     value={cantidadPiezas}
                     onChange={(e) => setCantidadPiezas(Number(e.target.value))}
                   />
-                  <span style={{ fontSize: '0.7rem', color: 'var(--gray-300)', marginTop: '0.2rem' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                     * En ensamble se cuenta por lotes. El número de serie nace oficialmente al aprobar Prueba Funcional.
                   </span>
                 </div>
@@ -276,7 +276,7 @@ export default function EnsambleStation() {
                     return (
                       <tr key={c.id}>
                         <td style={{ fontFamily: 'var(--font-mono)' }}>{c.fecha_hora}</td>
-                        <td style={{ fontWeight: 700, color: 'var(--accent)' }}>{ord?.folio}</td>
+                        <td style={{ fontWeight: 700, color: 'var(--carbon-900)' }}>{ord?.folio}</td>
                         <td>
                           Línea {c.id_linea} / Turno {c.id_turno}
                         </td>

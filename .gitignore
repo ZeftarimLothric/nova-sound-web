@@ -24,6 +24,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Base local PGlite (desarrollo)
+.pglite_data/
+*/.pglite_data/
+
 # Cobertura de pruebas
 coverage/
 */coverage/

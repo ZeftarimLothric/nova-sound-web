@@ -43,9 +43,9 @@ export default function EmbarquesStation() {
       (!c.id_embarque_asignado || c.id_embarque_asignado === embarqueActual?.id)
   );
 
-  const handleCrear = (e: React.FormEvent) => {
+  const handleCrear = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = crearEmbarque(pedido, idCliente, idTransportista, chofer, placas, fechaProg, obs);
+    const res = await crearEmbarque(pedido, idCliente, idTransportista, chofer, placas, fechaProg, obs);
     if (res.ok && res.embarque) {
       setEmbarqueSeleccionadoId(res.embarque.id);
       setModalNuevo(false);
@@ -55,9 +55,9 @@ export default function EmbarquesStation() {
     }
   };
 
-  const handleAsignarCaja = (cajaId: number) => {
+  const handleAsignarCaja = async (cajaId: number) => {
     if (!embarqueActual) return;
-    const res = asignarCajaEmbarque(embarqueActual.id, cajaId);
+    const res = await asignarCajaEmbarque(embarqueActual.id, cajaId);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `Caja #${cajaId} vinculada al manifiesto del embarque` });
     } else {
@@ -65,15 +65,19 @@ export default function EmbarquesStation() {
     }
   };
 
-  const handleRetirarCaja = (cajaId: number) => {
+  const handleRetirarCaja = async (cajaId: number) => {
     if (!embarqueActual) return;
-    retirarCajaEmbarque(embarqueActual.id, cajaId);
-    setMensaje({ tipo: 'ok', texto: `Caja #${cajaId} retirada del embarque` });
+    const res = await retirarCajaEmbarque(embarqueActual.id, cajaId);
+    if (res.ok) {
+      setMensaje({ tipo: 'ok', texto: `Caja #${cajaId} retirada del embarque` });
+    } else {
+      setMensaje({ tipo: 'err', texto: res.error || 'Error al retirar caja' });
+    }
   };
 
-  const handleDespachar = () => {
+  const handleDespachar = async () => {
     if (!embarqueActual) return;
-    const res = despacharEmbarque(embarqueActual.id);
+    const res = await despacharEmbarque(embarqueActual.id);
     if (res.ok) {
       setMensaje({ tipo: 'ok', texto: `¡EMBARQUE DESPACHADO! Salida confirmada y registrada en auditoría` });
     } else {
@@ -83,12 +87,12 @@ export default function EmbarquesStation() {
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">06</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[ESTACIÓN_05 // DESPACHO Y LOGÍSTICA]</span>
+            <span className="station-badge-code">Módulo 06 · Despacho y Logística</span>
             <h1 className="station-title">Embarques y Salida de Producto Terminado</h1>
             <span className="station-subtitle">
               Manifiesto de carga con revalidación de Calidad en tiempo real (Incidente C)
@@ -147,16 +151,16 @@ export default function EmbarquesStation() {
               </div>
 
               {embarqueActual && (
-                <div style={{ background: 'var(--dark-700)', padding: '0.75rem 1rem', border: '1px solid var(--dark-500)', fontSize: '0.8rem' }}>
+                <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.75rem 1rem', border: '1px solid var(--border-default)', fontSize: '0.8rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--accent)' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--carbon-900)' }}>
                       Transportista: {embarqueActual.transportista_nombre}
                     </span>
-                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--gray-300)' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
                       Prog: {embarqueActual.fecha_programada}
                     </span>
                   </div>
-                  <div style={{ color: 'var(--gray-200)', fontSize: '0.75rem' }}>
+                  <div style={{ color: 'var(--text-main)', fontSize: '0.75rem' }}>
                     Chofer: <strong>{embarqueActual.nombre_chofer}</strong> | Placas: <strong>{embarqueActual.placas_unidad}</strong> | Cliente: <strong>{embarqueActual.cliente_nombre}</strong>
                   </div>
                 </div>
@@ -177,7 +181,7 @@ export default function EmbarquesStation() {
             </div>
             <div className="panel-body">
               {cajasAsignadas.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem 0', fontSize: '0.85rem' }}>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 0', fontSize: '0.85rem' }}>
                   [SIN CAJAS ASIGNADAS AL EMBARQUE - SELECCIONE DE LA LISTA DE DISPONIBLES]
                 </div>
               ) : (
@@ -186,8 +190,8 @@ export default function EmbarquesStation() {
                     <div
                       key={caja.id}
                       style={{
-                        background: 'var(--dark-700)',
-                        border: '1px solid var(--dark-500)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-default)',
                         borderLeft: '4px solid var(--accent)',
                         padding: '0.6rem 0.85rem',
                         display: 'flex',
@@ -196,10 +200,10 @@ export default function EmbarquesStation() {
                       }}
                     >
                       <div>
-                        <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                        <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-main)' }}>
                           {caja.codigo_caja} // {caja.modelo_nombre} ({caja.color_nombre})
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--gray-300)' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                           {caja.piezas_actuales} unidades selladas | Creador: Usuario #{caja.id_usuario_creador}
                         </div>
                       </div>
@@ -241,7 +245,7 @@ export default function EmbarquesStation() {
             </div>
             <div className="panel-body">
               {cajasDisponibles.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem 0', fontSize: '0.85rem' }}>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 0', fontSize: '0.85rem' }}>
                   [NO HAY MÁS CAJAS CERRADAS PARA ESTE CLIENTE EN ALMACÉN]
                 </div>
               ) : (
@@ -250,8 +254,8 @@ export default function EmbarquesStation() {
                     <div
                       key={caja.id}
                       style={{
-                        background: 'var(--dark-700)',
-                        border: '1px solid var(--dark-500)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-default)',
                         padding: '0.6rem 0.85rem',
                         display: 'flex',
                         alignItems: 'center',
@@ -259,10 +263,10 @@ export default function EmbarquesStation() {
                       }}
                     >
                       <div>
-                        <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                        <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-main)' }}>
                           {caja.codigo_caja}
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--gray-300)' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                           {caja.modelo_nombre} ({caja.color_nombre}) - {caja.piezas_actuales} pzas
                         </div>
                       </div>
@@ -289,7 +293,7 @@ export default function EmbarquesStation() {
       {/* MODAL PROGRAMAR EMBARQUE */}
       {modalNuevo && (
         <div className="modal-overlay">
-          <div className="modal-content tex-carbon">
+          <div className="modal-content">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <span className="station-title" style={{ fontSize: '1.2rem' }}>
                 PROGRAMAR EMBARQUE (P-26)

@@ -54,12 +54,12 @@ export default function ReportesStation() {
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">08</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[ANALÍTICA // TABLEROS DE RENDIMIENTO]</span>
+            <span className="station-badge-code">Módulo 08 · Analítica y Rendimiento</span>
             <h1 className="station-title">Reportes, Pareto y Métricas Ejecutivas</h1>
             <span className="station-subtitle">
               Distribución de calidad segregada y análisis pareto de defectos oficiales
@@ -107,7 +107,7 @@ export default function ReportesStation() {
           <div className="kpi-card">
             <span className="kpi-label">CIERRES FORMALES</span>
             <span className="kpi-value">{cierresTurno.length}</span>
-            <span className="kpi-delta" style={{ color: 'var(--accent)' }}>
+            <span className="kpi-delta" style={{ color: 'var(--carbon-900)' }}>
               [Turnos consolidados]
             </span>
           </div>
@@ -140,7 +140,7 @@ export default function ReportesStation() {
                       {aprobadas} pzas ({pctAprobadas}%)
                     </span>
                   </div>
-                  <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
+                  <div style={{ height: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-default)' }}>
                     <div style={{ height: '100%', width: `${pctAprobadas}%`, background: 'var(--ok)' }} />
                   </div>
                 </div>
@@ -153,7 +153,7 @@ export default function ReportesStation() {
                       {retrabajo} pzas ({pctRetrabajo}%)
                     </span>
                   </div>
-                  <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
+                  <div style={{ height: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-default)' }}>
                     <div style={{ height: '100%', width: `${pctRetrabajo}%`, background: 'var(--warn)' }} />
                   </div>
                 </div>
@@ -166,7 +166,7 @@ export default function ReportesStation() {
                       {retencion} pzas ({pctRetencion}%)
                     </span>
                   </div>
-                  <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
+                  <div style={{ height: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-default)' }}>
                     <div style={{ height: '100%', width: `${pctRetencion}%`, background: 'var(--danger)' }} />
                   </div>
                 </div>
@@ -174,13 +174,13 @@ export default function ReportesStation() {
                 {/* 4. SCRAP */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.8rem' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--gray-300)' }}>4. SCRAP (MERMA NO RECUPERABLE)</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-muted)' }}>4. SCRAP (MERMA NO RECUPERABLE)</span>
                     <span style={{ fontFamily: 'var(--font-mono)' }}>
                       {scrap} pzas ({pctScrap}%)
                     </span>
                   </div>
-                  <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
-                    <div style={{ height: '100%', width: `${pctScrap}%`, background: 'var(--gray-400)' }} />
+                  <div style={{ height: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-default)' }}>
+                    <div style={{ height: '100%', width: `${pctScrap}%`, background: 'var(--text-muted)' }} />
                   </div>
                 </div>
               </div>
@@ -201,12 +201,12 @@ export default function ReportesStation() {
                   return (
                     <div key={cat}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.8rem' }}>
-                        <span style={{ fontWeight: 700, color: '#fff' }}>[{cat.toUpperCase()}]</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>[{cat.toUpperCase()}]</span>
                         <span style={{ fontFamily: 'var(--font-mono)' }}>
                           {cant} incidencias ({pct}%)
                         </span>
                       </div>
-                      <div style={{ height: '8px', background: 'var(--dark-700)', border: '1px solid var(--dark-500)' }}>
+                      <div style={{ height: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-default)' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: 'var(--accent)' }} />
                       </div>
                     </div>
@@ -243,7 +243,7 @@ export default function ReportesStation() {
                     const avancePct = Math.min(100, Math.round(((ord.piezas_ensambladas || 0) / ord.cantidad) * 100));
                     return (
                       <tr key={ord.id}>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent)' }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--carbon-900)' }}>
                           {ord.folio}
                         </td>
                         <td>{ord.cliente_nombre}</td>
@@ -255,7 +255,7 @@ export default function ReportesStation() {
                         <td style={{ color: 'var(--ok)' }}>{ord.piezas_aprobadas || 0} pzas</td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{ width: '80px', height: '6px', background: 'var(--dark-700)' }}>
+                            <div style={{ width: '80px', height: '6px', background: 'var(--bg-surface-elevated)' }}>
                               <div style={{ height: '100%', width: `${avancePct}%`, background: 'var(--accent)' }} />
                             </div>
                             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{avancePct}%</span>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { usePlanta, CATALOGO_DEFECTOS_OFICIALES } from '../context/PlantaContext';
 
 export default function PruebasStation() {
-  const { sesion, ordenes, pruebasFuncionales, evaluarPruebaFuncional } = usePlanta();
+  const { sesion, ordenes, pruebasFuncionales, evaluarPruebaFuncional, abrirTrazabilidad } = usePlanta();
 
   const [ordenId, setOrdenId] = useState<number>(ordenes[0]?.id || 1);
   const [encendido, setEncendido] = useState<boolean>(true);
@@ -19,11 +19,11 @@ export default function PruebasStation() {
   const ordenActiva = ordenes.find((o) => o.id === ordenId);
   const todosChecksOk = encendido && audio && carga && bluetooth;
 
-  const handleEvaluar = (e: React.FormEvent) => {
+  const handleEvaluar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ordenActiva) return;
 
-    const res = evaluarPruebaFuncional(
+    const res = await evaluarPruebaFuncional(
       ordenActiva.id,
       { encendido, audio, carga, bluetooth },
       todosChecksOk ? undefined : defectoFallaId
@@ -42,6 +42,11 @@ export default function PruebasStation() {
           mensaje: `PRUEBA RECHAZADA - DEFECTO REGISTRADO SIN ASIGNAR SERIE (RN-04)`,
         });
       }
+    } else {
+      setResultadoReciente({
+        aprobada: false,
+        mensaje: res.error || 'Error al evaluar prueba funcional',
+      });
     }
   };
 
@@ -50,12 +55,12 @@ export default function PruebasStation() {
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">03</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[ESTACIÓN_02 // NACIMIENTO DE SERIE]</span>
+            <span className="station-badge-code">Módulo 03 · Pruebas Funcionales y Serie</span>
             <h1 className="station-title">Prueba Funcional Acústica y Eléctrica</h1>
             <span className="station-subtitle">
               Validación automatizada de los 4 parámetros clave antes de emitir número de serie
@@ -64,10 +69,10 @@ export default function PruebasStation() {
         </div>
         <div className="station-header-right">
           <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--carbon-900)', textTransform: 'uppercase' }}>
               SERIES EMITIDAS HOY:
             </span>
-            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>
               {pruebasAprobadas} UNIDADES
             </div>
           </div>
@@ -94,24 +99,34 @@ export default function PruebasStation() {
                 [{resultadoReciente.aprobada ? 'PASS' : 'FAIL'}] {resultadoReciente.mensaje}
               </span>
               {resultadoReciente.serie && (
-                <div style={{ fontSize: '0.8rem', color: 'var(--gray-200)', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-main)', marginTop: '0.2rem' }}>
                   Unidad liberada para inspección visual en Estación 03 Calidad.
                 </div>
               )}
             </div>
             {resultadoReciente.serie && (
-              <span
-                style={{
-                  background: 'var(--accent)',
-                  color: 'var(--dark-900)',
-                  padding: '0.3rem 0.8rem',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: '1.1rem',
-                }}
-              >
-                {resultadoReciente.serie}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span
+                  style={{
+                    background: 'var(--accent)',
+                    color: 'var(--carbon-900)',
+                    padding: '0.3rem 0.8rem',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: '1.1rem',
+                  }}
+                >
+                  {resultadoReciente.serie}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => abrirTrazabilidad(resultadoReciente.serie!)}
+                  className="btn btn-outline"
+                  style={{ padding: '0.35rem 0.7rem', fontSize: '0.75rem' }}
+                >
+                  VER 360°
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -150,7 +165,7 @@ export default function PruebasStation() {
                 ? `${Math.round((pruebasAprobadas / pruebasFuncionales.length) * 100)}%`
                 : '100%'}
             </span>
-            <span className="kpi-delta" style={{ color: 'var(--accent)' }}>
+            <span className="kpi-delta" style={{ color: 'var(--carbon-900)' }}>
               [Rendimiento de prueba]
             </span>
           </div>
@@ -186,10 +201,10 @@ export default function PruebasStation() {
                     onClick={() => setEncendido(!encendido)}
                   >
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
                         1. Encendido y Circuito de Alimentación
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--gray-300)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         Voltaje nominal correcto y consumo en standby dentro de tolerancia.
                       </div>
                     </div>
@@ -202,10 +217,10 @@ export default function PruebasStation() {
                     onClick={() => setAudio(!audio)}
                   >
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
                         2. Respuesta Acústica y Distorsión THD
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--gray-300)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         Barrer de 20Hz a 20kHz sin zumbido ni armónicos espurios.
                       </div>
                     </div>
@@ -218,10 +233,10 @@ export default function PruebasStation() {
                     onClick={() => setCarga(!carga)}
                   >
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
                         3. Puerto USB y Ciclo de Carga Rápida
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--gray-300)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         Detección de conector Type-C y corriente mayor a 1.5A continua.
                       </div>
                     </div>
@@ -234,10 +249,10 @@ export default function PruebasStation() {
                     onClick={() => setBluetooth(!bluetooth)}
                   >
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
                         4. Conectividad Bluetooth 5.3 y Emparejamiento
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--gray-300)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         RSSI superior a -60dBm y handshake con terminal de pruebas.
                       </div>
                     </div>
@@ -282,9 +297,9 @@ export default function PruebasStation() {
                 <span className="panel-title">REGLAS DE OPERACIÓN (RN-04)</span>
                 <span className="badge badge-accent">SPECIFICATION</span>
               </div>
-              <div className="panel-body" style={{ fontSize: '0.8rem', lineHeight: 1.6, color: 'var(--gray-200)' }}>
+              <div className="panel-body" style={{ fontSize: '0.8rem', lineHeight: 1.6, color: 'var(--text-main)' }}>
                 <p style={{ marginBottom: '0.75rem' }}>
-                  <strong style={{ color: 'var(--accent)' }}>Nacimiento de Serie:</strong> Una unidad sólo obtiene
+                  <strong style={{ color: 'var(--carbon-900)' }}>Nacimiento de Serie:</strong> Una unidad sólo obtiene
                   su identificador único (ej. <code>NS-2026-XXXX</code>) al pasar satisfactoriamente los 4 checks de
                   esta estación.
                 </p>
@@ -373,7 +388,7 @@ export default function PruebasStation() {
                     return (
                       <tr key={p.id}>
                         <td style={{ fontFamily: 'var(--font-mono)' }}>{p.fecha_hora}</td>
-                        <td style={{ fontWeight: 700, color: 'var(--accent)' }}>{ord?.folio}</td>
+                        <td style={{ fontWeight: 700, color: 'var(--carbon-900)' }}>{ord?.folio}</td>
                         <td style={{ fontFamily: 'var(--font-mono)' }}>
                           <span style={{ color: p.valida_encendido ? 'var(--ok)' : 'var(--danger)' }}>
                             {p.valida_encendido ? '[PWR]' : '[!PWR]'}
@@ -397,9 +412,9 @@ export default function PruebasStation() {
                         </td>
                         <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
                           {p.numero_serie ? (
-                            <span style={{ color: 'var(--accent)' }}>{p.numero_serie}</span>
+                            <span style={{ color: 'var(--carbon-900)' }}>{p.numero_serie}</span>
                           ) : (
-                            <span style={{ color: 'var(--gray-400)' }}>[SIN SERIE]</span>
+                            <span style={{ color: 'var(--text-muted)' }}>[SIN SERIE]</span>
                           )}
                         </td>
                         <td>{p.defecto_falla || '--'}</td>

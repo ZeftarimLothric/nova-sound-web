@@ -15,6 +15,8 @@ export const Icon: React.FC<IconProps> = ({ name, size, color, className = '', s
       style={{
         fontSize: size ? (typeof size === 'number' ? `${size}px` : size) : undefined,
         color: color || undefined,
+        lineHeight: 1,
+        verticalAlign: 'middle',
         ...style,
       }}
     >

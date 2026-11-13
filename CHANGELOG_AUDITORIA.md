@@ -152,7 +152,7 @@ nova-sound-ui-FRONTEND/
 
 ### 🖥️ C. Frontend HMI (React + TypeScript + Vite)
 
-#### 1. Sistema de Diseño Industrial (Arknights: Endfield)
+#### 1. Sistema de Diseño Industrial
 * **Antes (`main`):** Paleta azul oscura estándar, botones genéricos con emojis en títulos y tablas.
 * **Ahora:**
   * **Cero Tailwind:** Rediseñado en CSS puro modular de alto rendimiento ([`src/index.css`](file:///Users/xxnoubmaster69xx/code%20sheet/Calida%20y%20pruebas%20/diagrama%20base%20de%20datos%20sistemas/nova_sound_web_repo/nova-sound-ui-FRONTEND/src/index.css)).

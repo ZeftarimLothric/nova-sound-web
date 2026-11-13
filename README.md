@@ -1,24 +1,61 @@
 # Nova Sound MES — Sistema de Manufactura y Control de Calidad
 
+[![Estado](https://img.shields.io/badge/Rama-Experimental_%2F_Beta-f59e0b?style=flat-square)](#propuesta-beta--experimental)
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-green?style=flat-square&logo=node.js)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8+-646cff?style=flat-square&logo=vite)](https://vitejs.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon.tech-336791?style=flat-square&logo=postgresql)](https://neon.tech/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon.tech_%2B_PGlite_Local-336791?style=flat-square&logo=postgresql)](https://neon.tech/)
 [![Vitest](https://img.shields.io/badge/Tests-Vitest-yellow?style=flat-square&logo=vitest)](https://vitest.dev/)
 [![Audit](https://img.shields.io/badge/Auditor%C3%ADa_Caso-100%25_Cumplido-brightgreen?style=flat-square)](./Nova%20Sound%20–%20Registro%20de%20observaciones%20de%20revisi%C3%B3n.pdf)
+
+> ### Propuesta Beta / Experimental (`beta/rediseno-ui-industrial`)
+> Esta rama es una **propuesta visual y de experiencia de usuario (HMI Industrial)** construida sobre el backend y la base de datos ya auditados.  
+> Se publica en una rama independiente de prueba **sin modificar `main`**, para que el equipo pueda evaluarla, compararla y decidir libremente si se adopta o se mantiene como referencia.
 
 Sistema integral de **Ejecución de Manufactura (MES / SCADA Industrial)** desarrollado para la trazabilidad completa, control de calidad bajo protocolo **ISO-9001**, empaque por contenedores, despacho logístico y auditoría en tiempo real para líneas de producción de bocinas inteligentes Nova Sound.
 
 ---
 
-## 📌 Guía de Puesta al Día para el Equipo (Changelog de Auditoría)
+## Capturas de Pantalla (Vista Previa Beta)
+
+### Acceso y Centro de Telemetría
+| Inicio de Sesión HMI / MES | Centro de Telemetría y Operaciones |
+| :---: | :---: |
+| ![Login](docs/screenshots/01-login.png) | ![Inicio](docs/screenshots/02-inicio.png) |
+
+### Piso de Producción y Calidad
+| 01 · Órdenes de Producción | 02 · Ensamble (Conteo) |
+| :---: | :---: |
+| ![Órdenes](docs/screenshots/03-ordenes.png) | ![Ensamble](docs/screenshots/04-ensamble.png) |
+
+| 03 · Prueba Funcional (Nacimiento de Serie) | 04 · Inspección de Calidad |
+| :---: | :---: |
+| ![Pruebas](docs/screenshots/05-pruebas.png) | ![Calidad](docs/screenshots/06-calidad.png) |
+
+### Empaque, Logística y Trazabilidad
+| 05 · Empaque y Cajas | 06 · Embarques y Despacho |
+| :---: | :---: |
+| ![Empaque](docs/screenshots/07-empaque.png) | ![Embarques](docs/screenshots/08-embarques.png) |
+
+| 07 · Trazabilidad 360° por Serie | 08 · Cierres de Turno |
+| :---: | :---: |
+| ![Trazabilidad](docs/screenshots/09-trazabilidad.png) | ![Turnos](docs/screenshots/10-turnos.png) |
+
+### Analítica y Administración
+| 09 · Reportes e Indicadores | 10 · Configuración y Seguridad |
+| :---: | :---: |
+| ![Reportes](docs/screenshots/11-reportes.png) | ![Configuración](docs/screenshots/12-configuracion.png) |
+
+---
+
+## Guía de Puesta al Día para el Equipo (Changelog de Auditoría)
 
 > **Nota para colaboradores y compañeros del equipo:**  
 > Este documento explica en detalle las modificaciones realizadas en este repositorio respecto a la versión inicial de GitHub ([`https://github.com/ZeftarimLothric/nova-sound-web/tree/main`](https://github.com/ZeftarimLothric/nova-sound-web/tree/main)).  
 > Todos los cambios fueron implementados para resolver el 100% de los hallazgos y no conformidades señaladas en el documento docente de auditoría: **`Nova Sound – Registro de observaciones de revisión.pdf`**.  
 >  
-> 📑 **Para ver el desglose técnico archivo por archivo y el mapa de git diff, consulta:** [**`CHANGELOG_AUDITORIA.md`**](./CHANGELOG_AUDITORIA.md).
+> **Para ver el desglose técnico archivo por archivo y el mapa de git diff, consulta:** [**`CHANGELOG_AUDITORIA.md`**](./CHANGELOG_AUDITORIA.md).
 
 ---
 
@@ -57,13 +94,13 @@ Sistema integral de **Ejecución de Manufactura (MES / SCADA Industrial)** desar
 
 El documento de auditoría estableció que el sistema debía demostrar la prevención de los 4 incidentes reales ocurridos en la planta Nova Sound. Todos cuentan con pruebas automatizadas en `tests/incidentes.audit.test.ts`:
 
-### 🚨 Incidente A: 87 unidades "desaparecidas" en turno
+### Incidente A: 87 unidades "desaparecidas" en turno
 * **Causa en versión inicial:** No se medía el inventario en proceso (WIP) entre etapas; si ensamble reportaba 100 y calidad liberaba 80, no se sabía dónde estaban las 20 restantes.
 * **Solución implementada:** Se integró la **Matriz de Balance por Etapas**:
   $$\text{Diferencia WIP} = \text{Ensambladas} - \text{Probadas} - \text{Liberadas} - \text{Empacadas} - \text{Embarcadas}$$
   El reporte de cierre del turno desglosa exactamente cuántas piezas quedaron en cada buffer y levanta alertas si hay discrepancias no justificadas.
 
-### 🚨 Incidente B: Caja de NS-PRO Negro contaminada con 6 piezas NS-SPORT Azul
+### Incidente B: Caja de NS-PRO Negro contaminada con 6 piezas NS-SPORT Azul
 * **Causa en versión inicial:** La tabla `cajas` no guardaba cliente, modelo ni color; cualquier operador podía escanear cualquier serie en cualquier caja.
 * **Solución implementada:** 
   1. La tabla `cajas` ahora almacena `id_cliente`, `id_modelo`, `id_color` y capacidad según modelo.
@@ -72,11 +109,11 @@ El documento de auditoría estableció que el sistema debía demostrar la preven
      * Que coincida en `id_color` (a menos que el cliente explícitamente permita mezcla en `clientes.permite_mezcla_colores`).
      * Que la unidad esté en estado **Aprobada** por Calidad.
 
-### 🚨 Incidente C: Unidades retenidas enviadas al cliente en un embarque
+### Incidente C: Unidades retenidas enviadas al cliente en un embarque
 * **Causa en versión inicial:** Una unidad se empacaba cuando estaba aprobada, luego Calidad abría una investigación y la ponía "En retención", pero el módulo de Embarques no revalidaba el estado al salir el camión.
 * **Solución implementada:** El endpoint `PATCH /api/embarques/:id/despachar` ejecuta una consulta transaccional que recorre todas las unidades contenidas en las cajas asignadas al embarque. Si tan solo **una unidad** tiene estado distinto a `Aprobada`, **la transacción se aborta con error HTTP 400 y mensaje explícito de bloqueo por calidad**.
 
-### 🚨 Incidente D: Cierre de turno tarde y ajustes no autorizados
+### Incidente D: Cierre de turno tarde y ajustes no autorizados
 * **Causa en versión inicial:** El cierre dependía de hojas de cálculo externas y las correcciones de piezas se hacían directamente en base de datos sin bitácora ni aprobación.
 * **Solución implementada:** Creación de la entidad `cierres_turno` y el flujo de `solicitudes_autorizacion`. Si un líder necesita ajustar un número después de cerrado el turno, genera una solicitud que debe ser aprobada por el Gerente de Producción (RN-11).
 

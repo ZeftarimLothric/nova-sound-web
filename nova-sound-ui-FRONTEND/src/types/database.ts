@@ -103,6 +103,8 @@ export interface Usuario {
   nombre_completo: string;
   usuario_login: string;
   id_rol: number;
+  nombre_rol?: string;
+  permisos?: string[];
   activo: boolean;
 }
 

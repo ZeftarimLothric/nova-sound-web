@@ -3,7 +3,7 @@ import { usePlanta, CATALOGO_ESTADOS_CALIDAD, CATALOGO_DEFECTOS_OFICIALES } from
 import { EstadosCalidadEnum } from '../types/database';
 
 export default function CalidadStation() {
-  const { unidades, inspeccionesCalidad, dictaminarCalidad, sesion } = usePlanta();
+  const { unidades, inspeccionesCalidad, dictaminarCalidad, sesion, abrirTrazabilidad } = usePlanta();
 
   const [numeroSerie, setNumeroSerie] = useState<string>(unidades[0]?.numero_serie || '');
   const [estadoResultadoId, setEstadoResultadoId] = useState<number>(EstadosCalidadEnum.APROBADA);
@@ -14,13 +14,13 @@ export default function CalidadStation() {
   // Filtrado de unidad seleccionada
   const unidadActual = unidades.find((u) => u.numero_serie.toUpperCase() === numeroSerie.trim().toUpperCase());
 
-  const handleDictaminar = (e: React.FormEvent) => {
+  const handleDictaminar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!numeroSerie.trim()) {
       setMensaje({ tipo: 'err', texto: 'Ingrese un número de serie válido' });
       return;
     }
-    const res = dictaminarCalidad(
+    const res = await dictaminarCalidad(
       numeroSerie.trim(),
       estadoResultadoId,
       estadoResultadoId === EstadosCalidadEnum.APROBADA ? undefined : defectoId,
@@ -42,12 +42,12 @@ export default function CalidadStation() {
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">04</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[ESTACIÓN_03 // CONTROL DE CALIDAD]</span>
+            <span className="station-badge-code">Módulo 04 · Control de Calidad</span>
             <h1 className="station-title">Inspección Visual y Disposición Técnica</h1>
             <span className="station-subtitle">
               Dictamen formal en 4 estados con severidad de defectos y trazabilidad 360°
@@ -56,10 +56,10 @@ export default function CalidadStation() {
         </div>
         <div className="station-header-right">
           <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--carbon-900)', textTransform: 'uppercase' }}>
               INSPECTOR EN TURNO:
             </span>
-            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)' }}>
               {sesion.usuario.nombre_completo}
             </div>
           </div>
@@ -114,10 +114,10 @@ export default function CalidadStation() {
           </div>
           <div className="kpi-card">
             <span className="kpi-label">SCRAP / RECHAZO</span>
-            <span className="kpi-value" style={{ color: 'var(--gray-300)' }}>
+            <span className="kpi-value" style={{ color: 'var(--text-muted)' }}>
               {scrap}
             </span>
-            <span className="kpi-delta" style={{ color: 'var(--gray-300)' }}>
+            <span className="kpi-delta" style={{ color: 'var(--text-muted)' }}>
               [Destrucción formal]
             </span>
           </div>
@@ -158,14 +158,25 @@ export default function CalidadStation() {
                         </option>
                       ))}
                     </select>
+                    {numeroSerie.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => abrirTrazabilidad(numeroSerie.trim())}
+                        className="btn btn-outline"
+                        style={{ padding: '0 0.75rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                        title="Abrir ficha en Trazabilidad 360°"
+                      >
+                        360°
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* TARJETA DE UNIDAD SELECCIONADA */}
                 {unidadActual && (
-                  <div style={{ background: 'var(--dark-700)', padding: '0.8rem 1rem', border: '1px solid var(--dark-500)', fontSize: '0.8rem' }}>
+                  <div style={{ background: 'var(--bg-surface-elevated)', padding: '0.8rem 1rem', border: '1px solid var(--border-default)', fontSize: '0.8rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                      <span style={{ fontWeight: 700, color: 'var(--accent)' }}>
+                      <span style={{ fontWeight: 700, color: 'var(--carbon-900)' }}>
                         {unidadActual.modelo} // {unidadActual.color}
                       </span>
                       <span
@@ -180,7 +191,7 @@ export default function CalidadStation() {
                         {unidadActual.estado_calidad_nombre}
                       </span>
                     </div>
-                    <div style={{ color: 'var(--gray-300)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                    <div style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                       Orden: #{unidadActual.id_orden} | Cliente: {unidadActual.cliente} | Línea: L{unidadActual.id_linea} | Turno: T{unidadActual.id_turno}
                     </div>
                   </div>
@@ -206,9 +217,9 @@ export default function CalidadStation() {
                                 : est.id === 2
                                 ? 'var(--warn)'
                                 : 'var(--danger)'
-                              : 'var(--dark-700)',
-                          color: estadoResultadoId === est.id ? '#0a0b0d' : 'var(--gray-200)',
-                          borderColor: estadoResultadoId === est.id ? 'transparent' : 'var(--dark-500)',
+                              : 'var(--bg-surface-elevated)',
+                          color: estadoResultadoId === est.id ? '#0a0b0d' : 'var(--text-main)',
+                          borderColor: estadoResultadoId === est.id ? 'transparent' : 'var(--border-default)',
                         }}
                       >
                         {est.nombre_estado}
@@ -219,7 +230,7 @@ export default function CalidadStation() {
 
                 {/* DEFECTO SI NO ES APROBADA */}
                 {estadoResultadoId !== EstadosCalidadEnum.APROBADA && (
-                  <div className="form-group" style={{ background: 'rgba(239, 68, 68, 0.06)', padding: '0.8rem', border: '1px solid var(--dark-500)' }}>
+                  <div className="form-group" style={{ background: 'rgba(239, 68, 68, 0.06)', padding: '0.8rem', border: '1px solid var(--border-default)' }}>
                     <label className="form-label">DEFECTO DETECTADO (CATÁLOGO OFICIAL CON SEVERIDAD)</label>
                     <select
                       className="form-select"
@@ -261,7 +272,7 @@ export default function CalidadStation() {
             </div>
             <div className="panel-body">
               {inspeccionesCalidad.filter((i) => i.numero_serie === numeroSerie).length === 0 ? (
-                <div style={{ color: 'var(--gray-400)', fontSize: '0.8rem', textAlign: 'center', padding: '2rem 0' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', padding: '2rem 0' }}>
                   [SIN INSPECCIONES PREVIAS PARA ESTA SERIE]
                 </div>
               ) : (
@@ -272,7 +283,7 @@ export default function CalidadStation() {
                       <div
                         key={insp.id}
                         style={{
-                          background: 'var(--dark-700)',
+                          background: 'var(--bg-surface-elevated)',
                           borderLeft: `4px solid ${
                             insp.id_estado_resultado === 1
                               ? 'var(--ok)'
@@ -287,11 +298,11 @@ export default function CalidadStation() {
                           <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>
                             {insp.estado_resultado_nombre}
                           </span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--gray-300)' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                             {insp.fecha_inspeccion}
                           </span>
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--gray-200)' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-main)' }}>
                           Inspector: {insp.inspector_nombre}
                         </div>
                         {insp.defecto_descripcion && (
@@ -300,7 +311,7 @@ export default function CalidadStation() {
                           </div>
                         )}
                         {insp.comentarios && (
-                          <div style={{ fontSize: '0.75rem', color: 'var(--gray-300)', marginTop: '0.2rem', fontStyle: 'italic' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem', fontStyle: 'italic' }}>
                             "{insp.comentarios}"
                           </div>
                         )}
@@ -335,7 +346,7 @@ export default function CalidadStation() {
                   {inspeccionesCalidad.map((i) => (
                     <tr key={i.id}>
                       <td style={{ fontFamily: 'var(--font-mono)' }}>{i.fecha_inspeccion}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--accent)' }}>
+                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--carbon-900)' }}>
                         {i.numero_serie}
                       </td>
                       <td>{i.inspector_nombre}</td>
@@ -353,7 +364,7 @@ export default function CalidadStation() {
                         </span>
                       </td>
                       <td>{i.defecto_descripcion || '--'}</td>
-                      <td style={{ color: 'var(--gray-300)' }}>{i.comentarios || '--'}</td>
+                      <td style={{ color: 'var(--text-muted)' }}>{i.comentarios || '--'}</td>
                     </tr>
                   ))}
                 </tbody>

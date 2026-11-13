@@ -1,27 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePlanta } from '../context/PlantaContext';
 
 export default function TrazabilidadStation() {
-  const { buscarTrazabilidad, unidades } = usePlanta();
+  const { buscarTrazabilidad, consultarTrazabilidadRemota, serieTrazabilidad, unidades } = usePlanta();
 
-  const [query, setQuery] = useState<string>(unidades[0]?.numero_serie || 'NS-2026-0001');
+  const [query, setQuery] = useState<string>(serieTrazabilidad || unidades[0]?.numero_serie || 'NS-2026-0001');
   const [data, setData] = useState(() => buscarTrazabilidad(query));
 
-  const handleBuscar = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!serieTrazabilidad) return;
+    setQuery(serieTrazabilidad);
+    consultarTrazabilidadRemota(serieTrazabilidad).then((res) => {
+      if (res) setData(res);
+    });
+  }, [serieTrazabilidad]);
+
+  const handleBuscar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    const res = buscarTrazabilidad(query.trim());
+    const res = await consultarTrazabilidadRemota(query.trim());
     setData(res);
   };
 
   return (
     <div className="station-container">
-      {/* HEADER ENDFIELD */}
-      <div className="station-header tex-carbon">
+      {/* HEADER INDUSTRIAL */}
+      <div className="station-header">
         <div className="station-header-left">
           <div className="station-deco-sq">360</div>
           <div className="station-title-box">
-            <span className="station-badge-code">[TRAZABILIDAD // HISTORIAL DE PIEZA]</span>
+            <span className="station-badge-code">Trazabilidad 360° · Historial de Unidad</span>
             <h1 className="station-title">Genealogía y Trazabilidad 360°</h1>
             <span className="station-subtitle">
               Auditoría unificada desde orden de ensamble hasta el manifiesto de embarque
@@ -53,7 +61,7 @@ export default function TrazabilidadStation() {
             </form>
 
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--gray-300)', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 SERIES DE PRUEBA RÁPIDA:
               </span>
               {unidades.map((u) => (
@@ -77,7 +85,7 @@ export default function TrazabilidadStation() {
         {/* RESULTADO DE TRAZABILIDAD */}
         {!data || !data.unidad ? (
           <div className="panel">
-            <div className="panel-body" style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-400)' }}>
+            <div className="panel-body" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
               [LA SERIE CONSULTADA NO EXISTE O NO HA SIDO EMITIDA POR EL BANCO DE PRUEBAS FUNCIONALES]
             </div>
           </div>
@@ -93,25 +101,25 @@ export default function TrazabilidadStation() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
                   <div>
                     <span className="kpi-label">NÚMERO DE SERIE</span>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent)' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--carbon-900)' }}>
                       {data.unidad.numero_serie}
                     </div>
                   </div>
                   <div>
                     <span className="kpi-label">MODELO // COLOR</span>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
                       {data.unidad.modelo} ({data.unidad.color})
                     </div>
                   </div>
                   <div>
                     <span className="kpi-label">CLIENTE ASIGNADO</span>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
                       {data.unidad.cliente}
                     </div>
                   </div>
                   <div>
                     <span className="kpi-label">ORDEN DE PRODUCCIÓN</span>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
                       {data.orden?.folio || `#${data.unidad.id_orden}`}
                     </div>
                   </div>
@@ -131,7 +139,7 @@ export default function TrazabilidadStation() {
                   <div>Línea: <strong>L{data.unidad.id_linea}</strong></div>
                   <div>Turno: <strong>T{data.unidad.id_turno}</strong></div>
                   <div>Fecha: <strong>{data.unidad.fecha_ensamble}</strong></div>
-                  <div style={{ color: 'var(--gray-300)', marginTop: '0.4rem' }}>Pieza ensamblada en lote</div>
+                  <div style={{ color: 'var(--text-muted)', marginTop: '0.4rem' }}>Pieza ensamblada en lote</div>
                 </div>
               </div>
 
@@ -146,7 +154,7 @@ export default function TrazabilidadStation() {
                   <div>Audio 20Hz-20kHz: <strong style={{ color: 'var(--ok)' }}>PASÓ</strong></div>
                   <div>Carga USB: <strong style={{ color: 'var(--ok)' }}>PASÓ</strong></div>
                   <div>Bluetooth 5.3: <strong style={{ color: 'var(--ok)' }}>PASÓ</strong></div>
-                  <div style={{ color: 'var(--accent)', marginTop: '0.4rem', fontWeight: 700 }}>
+                  <div style={{ color: 'var(--carbon-900)', marginTop: '0.4rem', fontWeight: 700 }}>
                     Nacimiento de serie validado
                   </div>
                 </div>
@@ -163,7 +171,7 @@ export default function TrazabilidadStation() {
                 <div className="panel-body" style={{ fontSize: '0.8rem', lineHeight: 1.6 }}>
                   <div>Inspecciones: <strong>{data.inspecciones.length}</strong></div>
                   <div>Último Dictamen: <strong>{data.unidad.estado_calidad_nombre}</strong></div>
-                  <div style={{ color: 'var(--gray-300)', marginTop: '0.4rem' }}>
+                  <div style={{ color: 'var(--text-muted)', marginTop: '0.4rem' }}>
                     {data.inspecciones[0]?.comentarios || 'Inspección nominal conforme'}
                   </div>
                 </div>
@@ -185,7 +193,7 @@ export default function TrazabilidadStation() {
                       <div>Sellada: <strong>{data.caja.estado === 'Cerrada' ? 'SÍ' : 'NO'}</strong></div>
                     </>
                   ) : (
-                    <div style={{ color: 'var(--gray-400)' }}>Unidad aún no empacada en caja</div>
+                    <div style={{ color: 'var(--text-muted)' }}>Unidad aún no empacada en caja</div>
                   )}
                 </div>
               </div>
@@ -206,7 +214,7 @@ export default function TrazabilidadStation() {
                       <div>Transporte: <strong>{data.embarque.transportista_nombre}</strong></div>
                     </>
                   ) : (
-                    <div style={{ color: 'var(--gray-400)' }}>Sin asignar a manifiesto de salida</div>
+                    <div style={{ color: 'var(--text-muted)' }}>Sin asignar a manifiesto de salida</div>
                   )}
                 </div>
               </div>
@@ -235,8 +243,8 @@ export default function TrazabilidadStation() {
                         <tr key={h.id}>
                           <td style={{ fontFamily: 'var(--font-mono)' }}>{h.fecha_hora}</td>
                           <td>{h.usuario_nombre}</td>
-                          <td style={{ color: 'var(--gray-300)' }}>{h.estado_anterior}</td>
-                          <td style={{ fontWeight: 700, color: 'var(--accent)' }}>{h.estado_nuevo}</td>
+                          <td style={{ color: 'var(--text-muted)' }}>{h.estado_anterior}</td>
+                          <td style={{ fontWeight: 700, color: 'var(--carbon-900)' }}>{h.estado_nuevo}</td>
                           <td>{h.motivo}</td>
                         </tr>
                       ))}
